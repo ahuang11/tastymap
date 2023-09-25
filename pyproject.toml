@@ -62,6 +62,8 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "numpy",
+    "matplotlib",
 ]
 
 [project.urls]
