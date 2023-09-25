@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from enum import Enum
-from typing import Literal, Iterable
+from typing import Literal
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.colors import (
-    ListedColormap,
     LinearSegmentedColormap,
+    ListedColormap,
     rgb2hex,
     rgb_to_hsv,
 )
@@ -51,8 +52,8 @@ def cook_cmap(
         colors_or_cmap = colors_or_cmap.lower()
         colors_or_cmap, n_match = sub_match(r"_n\d+(?=_|$)", colors_or_cmap, "_n")
         colors_or_cmap, r_match = sub_match("_r+(?=_|$)", colors_or_cmap, "_r")
-        colors_or_cmap = get_cmap(colors_or_cmap)
-        default_name = name or colors_or_cmap.name
+        colors_or_cmap = get_cmap(colors_or_cmap)  # type: ignore
+        default_name = name or colors_or_cmap.name  # type: ignore
         if n_match:
             num_colors = int(n_match[2:])
             default_name += n_match
@@ -77,14 +78,14 @@ def cook_cmap(
         plt.register_cmap(name, cmap)
 
     if color_model is not None:
-        cmap = cmap_to_array(cmap)  # outputs RGBA
+        cmap_array = cmap_to_array(cmap)  # outputs RGBA
         if isinstance(color_model, str):
             color_model = ColorModel(color_model.lower())
 
         if color_model == ColorModel.RGB:
-            cmap = cmap[:, :3]
+            return cmap_array[:, :3]
         elif color_model == ColorModel.HEX:
-            cmap = np.array([rgb2hex(c) for c in cmap])
+            return np.array([rgb2hex(c) for c in cmap_array])
         elif color_model == ColorModel.HSV:
-            cmap = rgb_to_hsv(cmap[:, :3])
+            return rgb_to_hsv(cmap_array[:, :3])
     return cmap

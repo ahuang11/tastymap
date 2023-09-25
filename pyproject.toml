@@ -1,6 +1,6 @@
 [tool.ruff]
 target-version = "py39"
-extend-select = ["I", "TRY", "UP"]
+extend-select = ["I", "UP"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=tastymap/ --cov-report=term-missing"

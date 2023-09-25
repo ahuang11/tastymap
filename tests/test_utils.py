@@ -1,7 +1,8 @@
-import pytest
 import numpy as np
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from tastymap.utils import get_cmap, cmap_to_array, sub_match
+import pytest
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+
+from tastymap.utils import cmap_to_array, get_cmap, sub_match
 
 
 class TestGetCmap:

@@ -1,8 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+
+from tastymap.core import ColorModel, cook_cmap
 from tastymap.utils import get_cmap
-from tastymap.core import cook_cmap, ColorModel
 
 
 class TestCookCmap:

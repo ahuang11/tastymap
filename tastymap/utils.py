@@ -1,17 +1,18 @@
 from __future__ import annotations
-from typing import Iterable
-from re import findall, sub
+
+from collections.abc import Iterable
 from difflib import get_close_matches
+from re import findall, sub
 
 import numpy as np
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from matplotlib.pyplot import colormaps, get_cmap as _get_cmap
-
+from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
+from matplotlib.pyplot import colormaps
+from matplotlib.pyplot import get_cmap as _get_cmap
 
 _LOWER_COLORMAPS = {cmap.lower(): cmap for cmap in colormaps()}
 
 
-def get_cmap(cmap: str) -> ListedColormap:
+def get_cmap(cmap: str) -> Colormap:
     """
     Get a colormap by name.
 
@@ -46,7 +47,7 @@ def cmap_to_array(
         An array of colors.
     """
     if isinstance(cmap, str):
-        cmap = get_cmap(cmap)
+        cmap = get_cmap(cmap)  # type: ignore
 
     if isinstance(cmap, LinearSegmentedColormap):
         cmap_array = cmap(np.linspace(0, 1, cmap.N))
