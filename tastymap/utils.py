@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from difflib import get_close_matches
-from re import findall, sub
+from re import findall, sub, IGNORECASE
 
 import numpy as np
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
@@ -16,7 +16,7 @@ def get_cmap(cmap: str) -> Colormap:
     """
     Get a colormap by name.
 
-    Args:F
+    Args:
         cmap: The name of the colormap.
 
     Returns:
@@ -32,6 +32,47 @@ def get_cmap(cmap: str) -> Colormap:
             )
         else:
             raise ValueError(f"Unknown colormap '{cmap}'.")
+
+
+def subset_cmap(
+    cmap: LinearSegmentedColormap,
+    indices: int | float | slice | Iterable,
+    name: str | None = None,
+) -> LinearSegmentedColormap:
+    """
+    Subset a colormap.
+
+    Args:
+        cmap: A colormap.
+        indices: The indices to subset.
+        name: The name of the new colormap.
+
+    Returns:
+        A new colormap.
+    """
+    cmap_array = cmap_to_array(cmap)
+    name = name or cmap.name
+    if isinstance(indices, (int, float)):
+        cmap_indices = np.array([indices] * 2).astype(int)
+        name += f"_i{indices}"
+    elif isinstance(indices, Iterable):
+        cmap_indices = np.array(indices)
+        if len(cmap_indices) == 1:
+            cmap_indices = np.array([cmap_indices] * 2).astype(int)
+        name += f"_i{','.join(indices.astype(str))}"
+    elif isinstance(indices, slice):
+        cmap_indices = indices
+        step = indices.step
+        start = indices.start
+        stop = indices.stop
+        if not indices.start and not indices.stop:
+            name += f"_i::{step}"
+        else:
+            name += f"_i{start}:{stop}:{step}"
+
+    cmap_array = cmap_array[cmap_indices]
+    cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
+    return cmap
 
 
 def cmap_to_array(
@@ -70,9 +111,9 @@ def sub_match(pattern: str, string: str, key: str) -> tuple[str, str]:
     Returns:
         The new string and the match.
     """
-    matches = findall(pattern, string)
+    matches = findall(pattern, string, IGNORECASE)
     if len(matches) > 1:
         raise ValueError(f"Should only contain one {key!r} but found {matches}")
     elif len(matches) == 1:
-        string = sub(pattern, "", string, count=1)
+        string = sub(pattern, "", string, count=1, flags=IGNORECASE)
     return string, matches[0] if matches else ""
