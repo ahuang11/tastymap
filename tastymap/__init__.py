@@ -1,7 +1,7 @@
 """colormaps cooked for your palate"""
 
-from .core import cook_cmap
+from .core import TastyMap, cook_tmap
 
 __version__ = "0.0.0"
 
-__all__ = ["cook_cmap"]
+__all__ = ["Tastymap"]

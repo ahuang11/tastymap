@@ -4,7 +4,6 @@ extend-select = ["I", "UP"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=tastymap/ --cov-report=term-missing"
-asyncio_mode = "strict"
 
 [tool.hatch]
 

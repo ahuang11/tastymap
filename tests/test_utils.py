@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 
-from tastymap.utils import cmap_to_array, get_cmap, sub_match
+from tastymap.utils import cmap_to_array, get_cmap, replace_match, subset_cmap
 
 
 class TestGetCmap:
@@ -33,6 +33,54 @@ class TestGetCmap:
         with pytest.raises(ValueError, match="Unknown colormap ''."):
             get_cmap("")
 
+    def test_whitespace(self):
+        with pytest.raises(ValueError, match="Unknown colormap ' viridis '."):
+            get_cmap(" viridis ")
+
+    def test_non_string_input(self):
+        with pytest.raises(AttributeError):
+            get_cmap(123)
+
+
+class TestSubsetCmap:
+    @pytest.fixture
+    def basic_cmap(self):
+        return LinearSegmentedColormap.from_list(
+            "basic", ["red", "green", "blue", "yellow"]
+        )
+
+    def test_subset_with_integer(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, 1)
+        assert len(cmap_to_array(subset)) == 2
+        assert subset.name == "basic_i1"
+
+    def test_subset_with_float(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, 1.5)
+        assert len(cmap_to_array(subset)) == 2
+        assert subset.name == "basic_i1.5"
+
+    def test_subset_with_slice(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, slice(1, 3))
+        assert len(cmap_to_array(subset)) == 2
+        assert subset.name == "basic_i1:3:None"
+
+    def test_subset_with_iterable(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, [0, 2])
+        assert len(cmap_to_array(subset)) == 2
+        assert subset.name == "basic_i0,2"
+
+    def test_custom_name(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, 1, "custom_name")
+        assert subset.name == "custom_name_i1"
+
+    def test_invalid_indices(self, basic_cmap):
+        with pytest.raises(IndexError):
+            subset_cmap(basic_cmap, 1000)
+
+    def test_invalid_iterable(self, basic_cmap):
+        with pytest.raises(IndexError):
+            subset_cmap(basic_cmap, [0, 1000])
+
 
 class TestCmapToArray:
     def test_from_str(self):
@@ -54,14 +102,14 @@ class TestCmapToArray:
         assert isinstance(arr, np.ndarray)
 
 
-class TestSubMatch:
+class TestReplaceMatch:
     def test_single_match(self):
-        new_string, match = sub_match(r"\d+", "hello123world", "number")
+        new_string, match = replace_match(r"\d+", "hello123world", "number")
         assert new_string == "helloworld"
         assert match == "123"
 
     def test_no_match(self):
-        new_string, match = sub_match(r"\d+", "helloworld", "number")
+        new_string, match = replace_match(r"\d+", "helloworld", "number")
         assert new_string == "helloworld"
         assert match == ""
 
@@ -69,14 +117,32 @@ class TestSubMatch:
         with pytest.raises(
             ValueError, match="Should only contain one 'number' but found .*?"
         ):
-            sub_match(r"\d+", "hello123world456", "number")
+            replace_match(r"\d+", "hello123world456", "number")
 
     def test_empty_string(self):
-        new_string, match = sub_match(r"\d+", "", "number")
+        new_string, match = replace_match(r"\d+", "", "number")
         assert new_string == ""
         assert match == ""
 
     def test_special_regex_chars(self):
-        new_string, match = sub_match(r"\.\*", "hello.*world", "regex chars")
+        new_string, match = replace_match(r"\.\*", "hello.*world", "regex chars")
         assert new_string == "helloworld"
         assert match == ".*"
+
+    def test_pattern_at_start(self):
+        new_string, match = replace_match(r"^\d+", "123helloworld", "number")
+        assert new_string == "helloworld"
+        assert match == "123"
+
+    def test_pattern_at_end(self):
+        new_string, match = replace_match(r"\d+$", "helloworld123", "number")
+        assert new_string == "helloworld"
+        assert match == "123"
+
+    def test_non_string_pattern(self):
+        with pytest.raises(TypeError):
+            replace_match(123, "helloworld", "number")
+
+    def test_non_string_input(self):
+        with pytest.raises(TypeError):
+            replace_match(r"\d+", 123, "number")

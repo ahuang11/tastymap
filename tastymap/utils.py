@@ -59,14 +59,19 @@ def subset_cmap(
         cmap_indices = np.array(indices)
         if len(cmap_indices) == 1:
             cmap_indices = np.array([cmap_indices] * 2).astype(int)
-        name += f"_i{','.join(indices.astype(str))}"
+        name += f"_i{','.join(cmap_indices.astype(str))}"
     elif isinstance(indices, slice):
         cmap_indices = indices
         step = indices.step
         start = indices.start
         stop = indices.stop
         if not indices.start and not indices.stop:
-            name += f"_i::{step}"
+            if step == -1:
+                name, r_match = replace_match(r"_r+(?=_|$)", name, "_r")
+                if not r_match:
+                    name += "_r"
+            else:
+                name += f"_i::{step}"
         else:
             name += f"_i{start}:{stop}:{step}"
 
@@ -99,7 +104,7 @@ def cmap_to_array(
     return cmap_array
 
 
-def sub_match(pattern: str, string: str, key: str) -> tuple[str, str]:
+def replace_match(pattern: str, string: str, key: str) -> tuple[str, str]:
     """
     Find a pattern in a string and remove it.
 
