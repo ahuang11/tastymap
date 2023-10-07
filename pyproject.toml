@@ -53,7 +53,7 @@ name = "tastymap"
 authors = [
   { name = "tastymap" }
 ]
-description = "colormaps cooked for your palate"
+description = "palettes for your palate"
 readme = "README.md"
 dynamic = ["version"]
 classifiers = [

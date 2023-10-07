@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from difflib import get_close_matches
-from re import findall, sub, IGNORECASE
+from re import IGNORECASE, findall, sub
 
 import numpy as np
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
@@ -59,7 +59,7 @@ def subset_cmap(
         cmap_indices = np.array(indices)
         if len(cmap_indices) == 1:
             cmap_indices = np.array([cmap_indices] * 2).astype(int)
-        name += f"_i{','.join(cmap_indices.astype(str))}"
+        name += f"_i{','.join(str(i) for i in cmap_indices.flat)}"
     elif isinstance(indices, slice):
         cmap_indices = indices
         step = indices.step
@@ -84,7 +84,7 @@ def cmap_to_array(
     cmap: LinearSegmentedColormap | ListedColormap | Iterable,
 ) -> np.ndarray:
     """
-    Convert a colormap to an array of colors.
+    Convert a colormap to an array of colors as RGB.
 
     Args:
         cmap: A colormap.

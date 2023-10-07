@@ -64,10 +64,20 @@ class TestSubsetCmap:
         assert len(cmap_to_array(subset)) == 2
         assert subset.name == "basic_i1:3:None"
 
+    def test_subset_with_slice_step_only(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, slice(None, None, 2))
+        assert len(cmap_to_array(subset)) == 128
+        assert subset.name == "basic_i::2"
+
     def test_subset_with_iterable(self, basic_cmap):
         subset = subset_cmap(basic_cmap, [0, 2])
         assert len(cmap_to_array(subset)) == 2
         assert subset.name == "basic_i0,2"
+
+    def test_subset_with_single_iterable(self, basic_cmap):
+        subset = subset_cmap(basic_cmap, [2])
+        assert len(cmap_to_array(subset)) == 2
+        assert subset.name == "basic_i2,2"
 
     def test_custom_name(self, basic_cmap):
         subset = subset_cmap(basic_cmap, 1, "custom_name")

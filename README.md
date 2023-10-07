@@ -1,8 +1,6 @@
 # tastymap
 
-<p align="center">
-    <em>colormaps cooked for your palate</em>
-</p>
+<em>palettes for your palate</em>
 
 [![build](https://github.com/ahuang11/tastymap/workflows/Build/badge.svg)](https://github.com/ahuang11/tastymap/actions)
 [![codecov](https://codecov.io/gh/ahuang11/tastymap/branch/master/graph/badge.svg)](https://codecov.io/gh/ahuang11/tastymap)
