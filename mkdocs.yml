@@ -1,5 +1,5 @@
 site_name: tastymap
-site_description: palettes for your palate
+site_description: colormap palettes for your palate
 
 repo_url: https://github.com/ahuang11/tastymap
 repo_name: ahuang11/tastymap
@@ -55,4 +55,5 @@ watch:
 nav:
     - About: index.md
     - Reference:
-        - tastymap: reference/tastymap.md
+        - Core: reference/core.md
+        - Utils: reference/utils.md
