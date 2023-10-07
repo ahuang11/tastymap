@@ -1,6 +1,6 @@
-"""palettes for your palate"""
+"""colormap palettes for your palate"""
 
 
 __version__ = "0.0.0"
 
-__all__ = ["Tastymap"]
+__all__ = ["tastymap"]

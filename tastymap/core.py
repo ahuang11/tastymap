@@ -19,7 +19,14 @@ from .utils import cmap_to_array, get_cmap, subset_cmap
 
 
 class ColorModel(Enum):
-    """Enumeration for different color models."""
+    """Enumeration for different color models.
+
+    Attributes:
+        rgba: Red, green, blue, alpha.
+        rgb: Red, green, blue.
+        hsv: Hue, saturation, value.
+        hex: Hexcode.
+    """
 
     RGBA = "rgba"
     RGB = "rgb"
@@ -257,7 +264,7 @@ class TastyMap:
         )
         return TastyMap(cmap)
 
-    def __iter__(self):
+    def __iter__(self) -> np.ndarray:
         """Iterates over the colormap.
 
         Yields:
@@ -265,7 +272,7 @@ class TastyMap:
         """
         yield from self._cmap_array
 
-    def __getitem__(self, indices):
+    def __getitem__(self, indices: int | float | slice | Sequence) -> TastyMap:
         """Gets a subset of the colormap.
 
         Args:
