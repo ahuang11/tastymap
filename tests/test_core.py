@@ -162,18 +162,6 @@ class TestTastyMap:
         with pytest.raises(TypeError):
             TastyMap(12345)
 
-    def test_tweak_edge_values(self, tmap):
-        tweaked = tmap.tweak(hue=255, saturation=10, value=3)
-        assert isinstance(tweaked, TastyMap)
-
-    def test_tweak_out_of_range(self, tmap):
-        with pytest.raises(ValueError):
-            tmap.tweak(hue=300)
-        with pytest.raises(ValueError):
-            tmap.tweak(saturation=20)
-        with pytest.raises(ValueError):
-            tmap.tweak(value=4)
-
     def test_arithmetic_with_non_numeric(self, tmap):
         with pytest.raises(TypeError):
             tmap + "string"
@@ -191,7 +179,7 @@ class TestTastyMap:
     def test_and_operator_with_non_tastymap(self):
         tmap = TastyMap.from_str("viridis")
         with pytest.raises(TypeError):
-            result = tmap & "some_string"
+            tmap & "some_string"
 
     def test_cook_tmap_iterable_without_color_model(self):
         with pytest.raises(ValueError, match="Please specify from_color_model"):
@@ -204,7 +192,7 @@ class TestTastyMap:
 
     def test_pow(self):
         tmap = TastyMap.from_str("viridis")
-        result = tmap ** 2
+        result = tmap**2
         assert result == tmap.tweak(value=2)
 
     def test_eq_operator_with_non_tastymap(self):
@@ -231,15 +219,15 @@ class TestTastyMap:
         result = tmap % "rgb"
         assert result.shape[1] == 3
 
-    def test_len(self):
+    def test_len_tmap(self):
         tmap = TastyMap.from_str("viridis")
         assert len(tmap) == 256
 
-    def test_str(self):
+    def test_str_tmap(self):
         tmap = TastyMap.from_str("viridis")
         assert str(tmap) == "viridis (256 colors)"
 
-    def test_repr(self):
+    def test_repr_tmap(self):
         tmap = TastyMap.from_str("viridis")
         assert repr(tmap) == "TastyMap('viridis')"
 
@@ -247,7 +235,7 @@ class TestTastyMap:
         tmap = TastyMap.from_str("viridis")
         for color in tmap:
             assert isinstance(color, np.ndarray)
-    
+
 
 class TestCookCmap:
     def test_cook_from_string(self):

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Sequence
 from enum import Enum
+from typing import Any
 
 import numpy as np
 from matplotlib import colormaps
 from matplotlib.colors import (
+    Colormap,
     LinearSegmentedColormap,
     ListedColormap,
     hsv_to_rgb,
@@ -30,12 +32,12 @@ class TastyMap:
 
     Attributes:
         cmap: The colormap object.
-        _cmap_array: RGB array representation of the colormap.
+        cmap_array: RGB array representation of the colormap.
     """
 
     def __init__(
         self,
-        cmap: LinearSegmentedColormap,
+        cmap: Colormap,
         name: str | None = None,
     ):
         """Initializes a TastyMap instance.
@@ -51,33 +53,32 @@ class TastyMap:
 
         cmap = cmap.copy()
         cmap.name = name or cmap.name
-        self.cmap: LinearSegmentedColormap = cmap
+        self.cmap: Colormap = cmap
         self._cmap_array = cmap_to_array(cmap)
 
     @classmethod
-    def from_str(cls, string: str, **kwargs: dict) -> TastyMap:
+    def from_str(cls, string: str) -> TastyMap:
         """Creates a TastyMap instance from a string name.
 
         Args:
             string: Name of the colormap.
-            **kwargs: Additional keyword arguments.
 
         Returns:
             TastyMap: A new TastyMap instance.
         """
         cmap = get_cmap(string)  # type: ignore
-        _cmap_array = cmap_to_array(cmap)
+        cmap_array = cmap_to_array(cmap)
 
         new_name = string
         cmap = LinearSegmentedColormap.from_list(
-            new_name, _cmap_array, N=len(_cmap_array)
+            new_name, cmap_array, N=len(cmap_array)
         )
-        return TastyMap(cmap, **kwargs)
+        return TastyMap(cmap, name=new_name)
 
     @classmethod
     def from_list(
         cls,
-        colors: Iterable,
+        colors: Sequence,
         name: str = "custom_tastymap",
         color_model: ColorModel | str = ColorModel.RGBA,
     ) -> TastyMap:
@@ -90,18 +91,16 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance.
         """
-        if not isinstance(colors, Iterable):
-            raise TypeError(
-                f"Expected Iterable; received {type(colors)!r}."
-            )
-        if colors is None or len(colors) == 0:
+        if not isinstance(colors, Sequence):
+            raise TypeError(f"Expected Sequence; received {type(colors)!r}.")
+        if colors is None or len(colors) == 0:  # type: ignore
             raise ValueError("Must provide at least one color.")
-        _cmap_array = cmap_to_array(colors)
+        cmap_array = cmap_to_array(colors)
 
         if color_model in (ColorModel.HSV, ColorModel.HSV.value):
-            _cmap_array = hsv_to_rgb(_cmap_array)
+            cmap_array = hsv_to_rgb(cmap_array)
 
-        cmap = LinearSegmentedColormap.from_list(name, _cmap_array, N=len(_cmap_array))
+        cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
         return TastyMap(cmap)
 
     @classmethod
@@ -119,7 +118,7 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance.
         """
-        return cls.from_list(listed_colormap.colors, name=name)
+        return cls.from_list(listed_colormap.colors, name=name)  # type: ignore
 
     def interpolate(self, num_colors: int) -> TastyMap:
         """Interpolates the colormap to a specified number of colors.
@@ -195,7 +194,9 @@ class TastyMap:
         elif color_model == ColorModel.HSV:
             return rgb_to_hsv(self._cmap_array[:, :3])
         elif color_model == ColorModel.HEX:
-            return np.apply_along_axis(rgb2hex, 1, self._cmap_array[:, :3])
+            return np.apply_along_axis(
+                rgb2hex, 1, self._cmap_array[:, :3]  # type: ignore
+            )
 
     def set(
         self,
@@ -214,7 +215,7 @@ class TastyMap:
             TastyMap: A new TastyMap instance with the updated colormap.
         """
         cmap = self.cmap.copy()
-        cmap.set_extremes(bad=bad, under=under, over=over)
+        cmap.set_extremes(bad=bad, under=under, over=over)  # type: ignore
         return TastyMap(cmap)
 
     def tweak(
@@ -235,24 +236,24 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance with the tweaked colormap.
         """
-        _cmap_array = self._cmap_array.copy()
-        _cmap_array[:, :3] = rgb_to_hsv(_cmap_array[:, :3])
+        cmap_array = self._cmap_array.copy()
+        cmap_array[:, :3] = rgb_to_hsv(cmap_array[:, :3])
         if hue is not None:
             hue /= 255
             if abs(hue) > 1:
                 raise ValueError("Hue must be between -255 and 255 (non-inclusive).")
-            _cmap_array[:, 0] = (_cmap_array[:, 0] + hue) % 1
+            cmap_array[:, 0] = (cmap_array[:, 0] + hue) % 1
         if saturation is not None:
             if abs(saturation) > 10:
                 raise ValueError("Saturation must be between -10 and 10.")
-            _cmap_array[:, 1] = _cmap_array[:, 1] * saturation
+            cmap_array[:, 1] = cmap_array[:, 1] * saturation
         if value is not None:
             if value < 0 or value > 3:
                 raise ValueError("Value must be between 0 and 3.")
-            _cmap_array[:, 2] = _cmap_array[:, 2] * value
-        _cmap_array[:, :3] = hsv_to_rgb(np.clip(_cmap_array[:, :3], 0, 1))
+            cmap_array[:, 2] = cmap_array[:, 2] * value
+        cmap_array[:, :3] = hsv_to_rgb(np.clip(cmap_array[:, :3], 0, 1))
         cmap = LinearSegmentedColormap.from_list(
-            name or self.cmap.name, _cmap_array, N=len(_cmap_array)
+            name or self.cmap.name, cmap_array, N=len(cmap_array)
         )
         return TastyMap(cmap)
 
@@ -366,8 +367,8 @@ class TastyMap:
                 f"Can only combine TastyMap instances; received {type(tmap)!r}."
             )
         name = self.cmap.name + "_" + tmap.cmap.name
-        _cmap_array = np.concatenate([self._cmap_array, cmap_to_array(tmap.cmap)])
-        cmap = LinearSegmentedColormap.from_list(name, _cmap_array, N=len(_cmap_array))
+        cmap_array = np.concatenate([self._cmap_array, cmap_to_array(tmap.cmap)])
+        cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
         return TastyMap(cmap)
 
     def __or__(self, num_colors: int) -> TastyMap:
@@ -423,7 +424,7 @@ class TastyMap:
         """
         return len(self._cmap_array)
 
-    def __eq__(self, other: TastyMap) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Checks if two TastyMap instances are equal.
 
         Args:
@@ -434,7 +435,8 @@ class TastyMap:
         """
         if not isinstance(other, TastyMap):
             return False
-        return np.all(self._cmap_array == other._cmap_array)
+        cmap_array = other._cmap_array
+        return bool(np.all(self._cmap_array == cmap_array))
 
     def __str__(self) -> str:
         """Returns the name of the colormap.
@@ -454,7 +456,7 @@ class TastyMap:
 
 
 def cook_tmap(
-    colors_or_cmap: str | LinearSegmentedColormap | ListedColormap | Iterable,
+    colors_or_cmap: str | LinearSegmentedColormap | ListedColormap | Sequence,
     num_colors: int | None = None,
     reverse: bool = False,
     name: str | None = None,
@@ -462,7 +464,7 @@ def cook_tmap(
     under: str | tuple | None = None,
     over: str | tuple | None = None,
     from_color_model: ColorModel | str | None = None,
-) -> LinearSegmentedColormap:
+) -> TastyMap:
     """Cook a completely new colormap or modify an existing one.
 
     Args:
@@ -474,10 +476,10 @@ def cook_tmap(
         under: Color for underflow values. Defaults to None.
         over: Color for overflow values. Defaults to None.
         from_color_model: Color model of the input colormap; required if
-            colors_or_cmap is an Iterable and not hexcodes. Defaults to None.
+            colors_or_cmap is an Sequence and not hexcodes. Defaults to None.
 
     Returns:
-        LinearSegmentedColormap: A new colormap.
+        TastyMap: A new TastyMap instance with the new colormap.
     """
     if isinstance(colors_or_cmap, str):
         tmap = TastyMap.from_str(colors_or_cmap)
@@ -485,16 +487,18 @@ def cook_tmap(
         tmap = TastyMap(colors_or_cmap)
     elif isinstance(colors_or_cmap, ListedColormap):
         tmap = TastyMap.from_listed_colormap(colors_or_cmap)
-    elif isinstance(colors_or_cmap, Iterable):
+    elif isinstance(colors_or_cmap, Sequence):
         if not isinstance(colors_or_cmap[0], str) and from_color_model is None:
             raise ValueError(
                 "Please specify from_color_model to differentiate "
                 "between RGB and HSV color models."
             )
-        tmap = TastyMap.from_list(colors_or_cmap, color_model=from_color_model)
+        tmap = TastyMap.from_list(
+            colors_or_cmap, color_model=from_color_model or ColorModel.RGB
+        )
     else:
         raise TypeError(
-            f"Expected str, LinearSegmentedColormap, ListedColormap, or Iterable; "
+            f"Expected str, LinearSegmentedColormap, ListedColormap, or Sequence; "
             f"received {type(colors_or_cmap)!r}."
         )
 
