@@ -127,11 +127,11 @@ class TastyMap:
         """
         return cls.from_list(listed_colormap.colors, name=name)  # type: ignore
 
-    def interpolate(self, num_colors: int) -> TastyMap:
-        """Interpolates the colormap to a specified number of colors.
+    def resize(self, num_colors: int) -> TastyMap:
+        """Resizes the colormap to a specified number of colors.
 
         Args:
-            num_colors: Number of colors to interpolate to.
+            num_colors: Number of colors to resize to.
 
         Returns:
             TastyMap: A new TastyMap instance with the interpolated colormap.
@@ -175,7 +175,7 @@ class TastyMap:
         """
         return self[::-1]
 
-    def to(self, color_model: ColorModel | str) -> np.ndarray:
+    def to_model(self, color_model: ColorModel | str) -> np.ndarray:
         """Converts the colormap to a specified color model.
 
         Args:
@@ -205,7 +205,7 @@ class TastyMap:
                 rgb2hex, 1, self._cmap_array[:, :3]  # type: ignore
             )
 
-    def set(
+    def set_extremes(
         self,
         bad: str | tuple | None = None,
         under: str | tuple | None = None,
@@ -225,7 +225,7 @@ class TastyMap:
         cmap.set_extremes(bad=bad, under=under, over=over)  # type: ignore
         return TastyMap(cmap)
 
-    def tweak(
+    def tweak_hsv(
         self,
         hue: float | None = None,
         saturation: float | None = None,
@@ -302,7 +302,7 @@ class TastyMap:
             TastyMap: A new TastyMap instance with the hue
                 added to the colormap.
         """
-        return self.tweak(hue=hue)
+        return self.tweak_hsv(hue=hue)
 
     def __sub__(self, hue: float) -> TastyMap:
         """Subtracts a hue factor to the colormap.
@@ -314,7 +314,7 @@ class TastyMap:
             TastyMap: A new TastyMap instance with the hue
                 subtracted from the colormap.
         """
-        return self.tweak(hue=-hue)
+        return self.tweak_hsv(hue=-hue)
 
     def __mul__(self, saturation: float) -> TastyMap:
         """Multiplies a saturation factor to the colormap.
@@ -326,7 +326,7 @@ class TastyMap:
             TastyMap: A new TastyMap instance with the saturation
                 multiplied to the colormap.
         """
-        return self.tweak(saturation=saturation)
+        return self.tweak_hsv(saturation=saturation)
 
     def __truediv__(self, saturation: float) -> TastyMap:
         """Divides a saturation factor to the colormap.
@@ -338,7 +338,7 @@ class TastyMap:
             TastyMap: A new TastyMap instance with the saturation
                 divided from the colormap.
         """
-        return self.tweak(saturation=1 / saturation)
+        return self.tweak_hsv(saturation=1 / saturation)
 
     def __pow__(self, value: float) -> TastyMap:
         """Raises the brightness value factor to the colormap.
@@ -350,7 +350,7 @@ class TastyMap:
             TastyMap: A new TastyMap instance with the brightness value
                 raised to the colormap.
         """
-        return self.tweak(value=value)
+        return self.tweak_hsv(value=value)
 
     def __invert__(self) -> TastyMap:
         """Reverses the colormap.
@@ -382,12 +382,12 @@ class TastyMap:
         """Interpolates the colormap to a specified number of colors.
 
         Args:
-            num_colors: Number of colors to interpolate to.
+            num_colors: Number of colors to resize to.
 
         Returns:
             TastyMap: A new TastyMap instance with the interpolated colormap.
         """
-        return self.interpolate(num_colors)
+        return self.resize(num_colors)
 
     def __lshift__(self, name: str) -> TastyMap:
         """Renames the colormap.
@@ -421,7 +421,7 @@ class TastyMap:
             np.ndarray: Array representation of the colormap
                 in the specified color model.
         """
-        return self.to(color_model)
+        return self.to_model(color_model)
 
     def __len__(self) -> int:
         """Returns the number of colors in the colormap.
@@ -510,10 +510,10 @@ def cook_tmap(
         )
 
     if bad or under or over:
-        tmap = tmap.set(bad=bad, under=under, over=over)
+        tmap = tmap.set_extremes(bad=bad, under=under, over=over)
 
     if num_colors:
-        tmap = tmap.interpolate(num_colors)
+        tmap = tmap.resize(num_colors)
 
     if reverse:
         tmap = tmap.reverse()
