@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from enum import Enum
 from typing import Any
 
@@ -264,7 +264,7 @@ class TastyMap:
         )
         return TastyMap(cmap)
 
-    def __iter__(self) -> np.ndarray:
+    def __iter__(self) -> Generator[np.ndarray, None, None]:
         """Iterates over the colormap.
 
         Yields:

@@ -35,7 +35,7 @@ def get_cmap(cmap: str) -> Colormap:
 
 
 def subset_cmap(
-    cmap: LinearSegmentedColormap,
+    cmap: Colormap,
     indices: int | float | slice | Sequence,
     name: str | None = None,
 ) -> LinearSegmentedColormap:
