@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from collections.abc import Generator, Sequence
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import colormaps
 from matplotlib.colors import (
     Colormap,
@@ -13,7 +15,10 @@ from matplotlib.colors import (
     hsv_to_rgb,
     rgb2hex,
     rgb_to_hsv,
+    BoundaryNorm,
+    Normalize,
 )
+from matplotlib.ticker import FuncFormatter, Formatter
 
 from .utils import cmap_to_array, get_cmap, subset_cmap
 
@@ -32,6 +37,50 @@ class ColorModel(Enum):
     RGB = "rgb"
     HSV = "hsv"
     HEX = "hex"
+
+
+@dataclass
+class NormalizeSettings:
+    cmap: Colormap
+    norm: BoundaryNorm
+    ticks: np.ndarray
+    format: Formatter | None = None
+    spacing: str = "uniform"
+    kwargs: dict[str, Any] | None = None
+    """
+    Attributes:
+        cmap: The colormap object.
+        norm: The norm object.
+        ticks: The tick locations.
+        format: The tick formatter.
+        spacing: Spacing between the ticks; either "uniform" or "proportional".
+        kwargs: Additional keyword arguments for matplotlib.pyplot.colorbar.
+    """
+
+    @property
+    def plot_kwargs(self) -> dict[str, Any]:
+        """Gets the keyword arguments for matplotlib plot.
+
+        Returns:
+            dict[str, Any]: Keyword arguments for matplotlib plot.
+        """
+        return dict(cmap=self.cmap, norm=self.norm)
+
+    @property
+    def colorbar_kwargs(self):
+        """Gets the keyword arguments for matplotlib.pyplot.colorbar.
+
+        Returns:
+            dict[str, Any]: Keyword arguments for matplotlib.pyplot.colorbar.
+        """
+        return dict(
+            cmap=self.cmap,
+            norm=self.norm,
+            ticks=self.ticks,
+            format=self.format,
+            spacing=self.spacing,
+            **(self.kwargs or {}),
+        )
 
 
 class TastyMap:
@@ -263,6 +312,80 @@ class TastyMap:
             name or self.cmap.name, cmap_array, N=len(cmap_array)
         )
         return TastyMap(cmap)
+
+    def normalize(
+        self,
+        bounds: tuple[float, float] | Sequence[float],
+        labels: list[str] | None = None,
+        center: bool | None = None,
+        clip: bool | None = None,
+        extend: Literal["both", "neither", "min", "max"] = "both",
+        spacing: str = "uniform",
+        **colorbar_kwargs: dict,
+    ) -> NormalizeSettings:
+        """
+        Args:
+            bounds: Bounds for the colorbar; if a tuple, the lower and upper bounds;
+                if a sequence, the tick locations.
+            labels: Tick labels for the colorbar.
+            center: Whether to center the ticks; if True, the ticks are centered
+                around each interval; if False, the ticks are placed at the edges
+                of each interval.
+            clip: Whether to clip values outside the bounds.
+            extend: Whether to show extreme values.
+            spacing: Spacing between the ticks; either "uniform" or "proportional".
+            **colorbar_kwargs: Additional keyword arguments for matplotlib.pyplot.colorbar.
+
+        Returns:
+            NormalizeSettings: A dataclass containing the colorbar settings.
+        """
+        num_colors = len(self)
+        provided_ticks = not (len(bounds) == 2 and isinstance(bounds, tuple))
+        if provided_ticks:
+            vmin, vmax = bounds[0], bounds[-1]
+            num_ticks = len(bounds)
+            ticks = np.array(bounds)
+            ticks.sort()
+        else:
+            vmin, vmax = bounds
+            num_ticks = min(num_colors - 1, 11)
+            ticks = np.linspace(vmin, vmax, num_ticks)
+
+        if center is None and provided_ticks:
+            center = False
+
+        if clip is None:
+            clip = extend == "neither"
+
+        norm = None
+        if center is None:
+            norm = Normalize(vmin=vmin, vmax=vmax, clip=clip)
+            if not provided_ticks:
+                ticks = None  # let matplotlib decide
+        elif center:
+            norm_bins = ticks + 0.5
+            norm_bins = np.insert(norm_bins, 0, norm_bins[0] - 1)
+            norm = BoundaryNorm(norm_bins, num_colors, clip=clip, extend=extend)
+            if labels is None:
+                labels = ticks.copy()
+            ticks = norm_bins[:-1] + np.diff(norm_bins) / 2
+        else:
+            norm = BoundaryNorm(ticks, num_colors, clip=clip, extend=extend)
+
+        format = None
+        if labels is not None:
+            format = FuncFormatter(
+                lambda _, index: labels[index] if index < len(labels) else ""
+            )
+
+        return NormalizeSettings(
+            cmap=self.cmap,
+            norm=norm,
+            ticks=ticks,
+            format=format,
+            spacing=spacing,
+            kwargs=colorbar_kwargs,
+        )
 
     def __iter__(self) -> Generator[np.ndarray, None, None]:
         """Iterates over the colormap.
