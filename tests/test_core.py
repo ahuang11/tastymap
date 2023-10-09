@@ -55,7 +55,7 @@ class TestTastyMap:
             TastyMap("not_a_colormap")
 
     def test_interpolate(self, tmap):
-        interpolated = tmap.interpolate(10)
+        interpolated = tmap.resize(10)
         assert len(interpolated._cmap_array) == 10
 
     def test_reverse(self, tmap):
@@ -63,17 +63,17 @@ class TestTastyMap:
         assert reversed_map._cmap_array[0].tolist() == tmap._cmap_array[-1].tolist()
 
     def test_to(self, tmap):
-        rgba_array = tmap.to(ColorModel.RGBA)
+        rgba_array = tmap.to_model(ColorModel.RGBA)
         assert rgba_array.shape == (256, 4)
-        rgb_array = tmap.to(ColorModel.RGB)
+        rgb_array = tmap.to_model(ColorModel.RGB)
         assert rgb_array.shape == (256, 3)
-        hsv_array = tmap.to(ColorModel.HSV)
+        hsv_array = tmap.to_model(ColorModel.HSV)
         assert hsv_array.shape == (256, 3)
-        hex_array = tmap.to(ColorModel.HEX)
+        hex_array = tmap.to_model(ColorModel.HEX)
         assert hex_array.shape == (256,)
 
     def test_set_bad(self, tmap):
-        tmap = tmap.set(bad="black", under="black", over="black")
+        tmap = tmap.set_extremes(bad="black", under="black", over="black")
         assert tmap.cmap.get_bad().tolist() == [0.0, 0.0, 0.0, 1.0]
         assert tmap.cmap.get_over().tolist() == [0.0, 0.0, 0.0, 1.0]
         assert tmap.cmap.get_under().tolist() == [0.0, 0.0, 0.0, 1.0]
@@ -103,7 +103,7 @@ class TestTastyMap:
 
     def test_unsupported_color_model(self, tmap):
         with pytest.raises(ValueError):
-            tmap.to("unsupported_model")
+            tmap.to_model("unsupported_model")
 
     def test_invalid_indices(self, tmap):
         with pytest.raises(IndexError):
@@ -113,31 +113,31 @@ class TestTastyMap:
 
     def test_invalid_color_model(self, tmap):
         with pytest.raises(ValueError):
-            tmap.to("not_a_real_color_model")
+            tmap.to_model("not_a_real_color_model")
 
     def test_tweak_hue(self, tmap):
-        tweaked = tmap.tweak(hue=50)
+        tweaked = tmap.tweak_hsv(hue=50)
         assert isinstance(tweaked, TastyMap)
 
     def test_tweak_saturation(self, tmap):
-        tweaked = tmap.tweak(saturation=5)
+        tweaked = tmap.tweak_hsv(saturation=5)
         assert isinstance(tweaked, TastyMap)
 
     def test_tweak_value(self, tmap):
-        tweaked = tmap.tweak(value=2)
+        tweaked = tmap.tweak_hsv(value=2)
         assert isinstance(tweaked, TastyMap)
 
     def test_tweak_all(self, tmap):
-        tweaked = tmap.tweak(hue=50, saturation=5, value=2)
+        tweaked = tmap.tweak_hsv(hue=50, saturation=5, value=2)
         assert isinstance(tweaked, TastyMap)
 
     def test_tweak_edge_values(self, tmap):
-        tweaked_min_hue = tmap.tweak(hue=-255)
-        tweaked_max_hue = tmap.tweak(hue=255)
-        tweaked_min_saturation = tmap.tweak(saturation=-10)
-        tweaked_max_saturation = tmap.tweak(saturation=10)
-        tweaked_min_value = tmap.tweak(value=0)
-        tweaked_max_value = tmap.tweak(value=3)
+        tweaked_min_hue = tmap.tweak_hsv(hue=-255)
+        tweaked_max_hue = tmap.tweak_hsv(hue=255)
+        tweaked_min_saturation = tmap.tweak_hsv(saturation=-10)
+        tweaked_max_saturation = tmap.tweak_hsv(saturation=10)
+        tweaked_min_value = tmap.tweak_hsv(value=0)
+        tweaked_max_value = tmap.tweak_hsv(value=3)
 
         assert isinstance(tweaked_min_hue, TastyMap)
         assert isinstance(tweaked_max_hue, TastyMap)
@@ -148,11 +148,11 @@ class TestTastyMap:
 
     def test_tweak_out_of_range(self, tmap):
         with pytest.raises(ValueError):
-            tmap.tweak(hue=300)
+            tmap.tweak_hsv(hue=300)
         with pytest.raises(ValueError):
-            tmap.tweak(saturation=20)
+            tmap.tweak_hsv(saturation=20)
         with pytest.raises(ValueError):
-            tmap.tweak(value=4)
+            tmap.tweak_hsv(value=4)
 
     def test_empty_string(self):
         with pytest.raises(ValueError):
@@ -193,7 +193,7 @@ class TestTastyMap:
     def test_pow(self):
         tmap = TastyMap.from_str("viridis")
         result = tmap**2
-        assert result == tmap.tweak(value=2)
+        assert result == tmap.tweak_hsv(value=2)
 
     def test_eq_operator_with_non_tastymap(self):
         tmap = TastyMap.from_str("viridis")
@@ -274,12 +274,12 @@ class TestCookCmap:
     def test_r_flag_with_reverse_true(self):
         tmap = cook_tmap("viridis_r", reverse=True)
         assert isinstance(tmap, TastyMap)
-        assert np.all(tmap.to("rgba")[0] == get_cmap("viridis")(0))
+        assert np.all(tmap.to_model("rgba")[0] == get_cmap("viridis")(0))
 
     def test_r_flag_with_reverse_false(self):
         tmap = cook_tmap("viridis_r", reverse=False)
         assert isinstance(tmap, TastyMap)
-        assert np.all(tmap.to("rgba")[0] == get_cmap("viridis")(256))
+        assert np.all(tmap.to_model("rgba")[0] == get_cmap("viridis")(256))
 
     def test_with_num_colors(self):
         tmap = cook_tmap("viridis", num_colors=20)
