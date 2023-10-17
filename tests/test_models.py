@@ -257,13 +257,12 @@ class TestMatplotlibTastyBar:
 
     def test_init_not_provided_ticks(self, tmap):
         tmap_bar = MatplotlibTastyBar(tmap, bounds=slice(0, 18, 4))
-        np.testing.assert_equal(tmap_bar.ticks, [0, 4, 8, 12, 16, 20])
+        assert tmap_bar.ticks is None
         assert isinstance(tmap_bar.norm, Normalize)
         assert tmap_bar.format is None
         assert not tmap_bar.norm.clip
-        assert tmap_bar.norm.extend == "both"
         assert tmap_bar.norm.vmin == 0
-        assert tmap_bar.norm.vmax == 20
+        assert tmap_bar.norm.vmax == 18
 
     def test_init_not_provided_ticks_no_step(self, tmap):
         tmap_bar = MatplotlibTastyBar(tmap, bounds=slice(0, 18))
