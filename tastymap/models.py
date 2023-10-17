@@ -8,6 +8,7 @@ from typing import Any, Literal
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colormaps
+from matplotlib.cm import ScalarMappable
 from matplotlib.colors import (
     BoundaryNorm,
     Colormap,
@@ -18,7 +19,6 @@ from matplotlib.colors import (
     rgb2hex,
     rgb_to_hsv,
 )
-from matplotlib.pyplot import ScalarMappable
 from matplotlib.ticker import FuncFormatter
 
 from .utils import cmap_to_array, get_cmap, subset_cmap
