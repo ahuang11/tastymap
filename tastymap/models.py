@@ -599,3 +599,104 @@ class MatplotlibTastyBar(TastyBar):
         plot.norm = plot_settings["norm"]
         plt.colorbar(plot, **self.colorbar_settings)
         return plot
+
+
+class HoloViewsTastyBar(TastyBar):
+    def __init__(
+        self,
+        tmap: TastyMap,
+        bounds: slice | Sequence[float],
+        labels: list[str] | None = None,
+        uniform_spacing: bool = True,
+    ):
+        """Initializes a HoloViewsTastyBar instance.
+
+        Args:
+            tmap: A TastyMap instance.
+            bounds: Bounds for the colorbar.
+            labels: Labels for the colorbar. Defaults to None.
+            uniform_spacing: Whether to use uniform spacing for the colorbar.
+                Defaults to True.
+        """
+        super().__init__(tmap, bounds, labels, uniform_spacing)
+
+        from bokeh import models
+
+        self._models = models
+        self.palette = self.tmap.to_model("hex").tolist()
+
+        self.factors = None
+        self.major_label_overrides = None
+
+        num_colors = len(self.tmap)
+        is_slice = isinstance(self.bounds, slice)
+        if is_slice:
+            vmin = self.bounds.start  # type: ignore
+            vmax = self.bounds.stop  # type: ignore
+            step = self.bounds.step  #  type: ignore
+            if step is None:
+                num_ticks = min(num_colors - 1, 11)
+                ticks = np.linspace(vmin, vmax, num_ticks)
+            else:
+                ticks = np.arange(vmin, vmax + step, step)
+        else:
+            ticks = np.array(self.bounds)
+            num_ticks = len(ticks)
+        self.ticks = ticks.tolist()
+
+        num_labels = len(labels) if labels else 0
+        if uniform_spacing:
+            if labels is None:
+                self.factors = [
+                    f"{self.ticks[i]} - {self.ticks[i + 1]}"
+                    for i in range(len(self.ticks) - 1)
+                ]
+            else:
+                self.factors = labels
+                if not num_labels == num_ticks - 1:
+                    raise ValueError(
+                        f"Number of labels must be one less than the number of ticks; "
+                        f"received {num_labels} labels and {num_ticks} ticks."
+                    )
+        elif not uniform_spacing and labels:
+            if not num_labels == num_ticks:
+                raise ValueError(
+                    f"Number of labels must be equal to the number of ticks; "
+                    f"received {num_labels} labels and {num_ticks} ticks."
+                )
+            self.major_label_overrides = dict(zip(self.ticks, labels))
+
+    def _hook(self, hv_plot, _):
+        plot = hv_plot.handles["plot"]
+        mapper = self._models.CategoricalColorMapper(
+            palette=self.palette,
+            factors=self.factors,
+        )
+        color_bar = self._models.ColorBar(color_mapper=mapper)
+        plot.right[0] = color_bar
+
+    @property
+    def opts_settings(self):
+        """Keyword arguments for opts."""
+        opts_kwargs = dict(
+            cmap=self.palette,
+            color_levels=self.ticks,
+            clim=(self.ticks[0], self.ticks[-1]),
+        )
+        colorbar_opts = dict(ticker=self._models.FixedTicker(ticks=self.ticks))
+        if self.uniform_spacing:
+            opts_kwargs["hooks"] = [self._hook]
+        elif self.major_label_overrides:
+            colorbar_opts["major_label_overrides"] = self.major_label_overrides
+
+        if colorbar_opts:
+            opts_kwargs["colorbar_opts"] = colorbar_opts
+        return opts_kwargs
+
+    def add_to(self, plot):
+        """Adds a colorbar to a plot.
+
+        Args:
+            plot: A HoloViews plot.
+        """
+        return plot.opts(**self.opts_settings)
