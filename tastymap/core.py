@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import Sequence
+from typing import Any
 
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 
-from tastymap.models import ColorModel, TastyColorMap, MatplotlibTastyColorBar
+from tastymap.models import ColorModel, MatplotlibTastyBar, TastyMap
 
 
-def cook_tcmap(
+def cook_tmap(
     colors_or_cmap: Sequence | str | Colormap,
     num_colors: int | None = None,
     reverse: bool = False,
@@ -17,7 +17,7 @@ def cook_tcmap(
     under: str | tuple | None = None,
     over: str | tuple | None = None,
     from_color_model: ColorModel | str | None = None,
-) -> TastyColorMap:
+) -> TastyMap:
     """Cook a completely new colormap or modify an existing one.
 
     Args:
@@ -32,21 +32,21 @@ def cook_tcmap(
             colors_or_cmap is an Sequence and not hexcodes. Defaults to None.
 
     Returns:
-        TastyColorMap: A new TastyColorMap instance with the new colormap.
+        TastyMap: A new TastyMap instance with the new colormap.
     """
     if isinstance(colors_or_cmap, str):
-        tmap = TastyColorMap.from_str(colors_or_cmap)
+        tmap = TastyMap.from_str(colors_or_cmap)
     elif isinstance(colors_or_cmap, LinearSegmentedColormap):
-        tmap = TastyColorMap(colors_or_cmap)
+        tmap = TastyMap(colors_or_cmap)
     elif isinstance(colors_or_cmap, ListedColormap):
-        tmap = TastyColorMap.from_listed_colormap(colors_or_cmap)
+        tmap = TastyMap.from_listed_colormap(colors_or_cmap)
     elif isinstance(colors_or_cmap, Sequence):
         if not isinstance(colors_or_cmap[0], str) and from_color_model is None:
             raise ValueError(
                 "Please specify from_color_model to differentiate "
                 "between RGB and HSV color models."
             )
-        tmap = TastyColorMap.from_list(
+        tmap = TastyMap.from_list(
             colors_or_cmap, color_model=from_color_model or ColorModel.RGB
         )
     else:
@@ -71,26 +71,26 @@ def cook_tcmap(
     return tmap
 
 
-def pair_tcbar(
+def pair_tbar(
     plot: Any,
-    colors_or_cmap_or_tcmap: (Sequence | str | Colormap | TastyColorMap),
+    colors_or_cmap_or_tmap: (Sequence | str | Colormap | TastyMap),
     bounds: tuple[float, float] | Sequence[float],
     labels: list[str] | None = None,
     uniform_spacing: bool = True,
-    **tcbar_kwargs,
+    **tbar_kwargs,
 ):
-    tcmap = colors_or_cmap_or_tcmap
-    if not isinstance(tcmap, TastyColorMap):
-        tcmap = cook_tcmap(colors_or_cmap_or_tcmap)
+    tmap = colors_or_cmap_or_tmap
+    if not isinstance(tmap, TastyMap):
+        tmap = cook_tmap(colors_or_cmap_or_tmap)
 
     if hasattr(plot, "axes"):
-        tcbar = MatplotlibTastyColorBar(
-            tcmap,
+        tbar = MatplotlibTastyBar(
+            tmap,
             bounds=bounds,
             labels=labels,
             uniform_spacing=uniform_spacing,
-            **tcbar_kwargs,
+            **tbar_kwargs,
         )
     else:
         raise NotImplementedError("Only matplotlib plots are supported.")
-    return tcbar.add_to(plot)
+    return tbar.add_to(plot)

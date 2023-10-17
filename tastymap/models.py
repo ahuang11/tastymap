@@ -1,24 +1,24 @@
 from __future__ import annotations
-from abc import abstractmethod, ABC
 
+from abc import ABC, abstractmethod
 from collections.abc import Generator, Sequence
 from enum import Enum
 from typing import Any, Literal
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import colormaps
 from matplotlib.colors import (
+    BoundaryNorm,
     Colormap,
     LinearSegmentedColormap,
     ListedColormap,
+    Normalize,
     hsv_to_rgb,
     rgb2hex,
     rgb_to_hsv,
-    BoundaryNorm,
-    Normalize,
 )
-from matplotlib.ticker import FuncFormatter, Formatter
+from matplotlib.ticker import FuncFormatter
 
 from .utils import cmap_to_array, get_cmap, subset_cmap
 
@@ -39,7 +39,7 @@ class ColorModel(Enum):
     HEX = "hex"
 
 
-class TastyColorMap:
+class TastyMap:
     """A class to represent and manipulate colormaps in a tasty manner.
 
     Attributes:
@@ -52,7 +52,7 @@ class TastyColorMap:
         cmap: Colormap,
         name: str | None = None,
     ):
-        """Initializes a TastyColorMap instance.
+        """Initializes a TastyMap instance.
 
         Args:
             cmap: The colormap to be used.
@@ -69,14 +69,14 @@ class TastyColorMap:
         self._cmap_array = cmap_to_array(cmap)
 
     @classmethod
-    def from_str(cls, string: str) -> TastyColorMap:
-        """Creates a TastyColorMap instance from a string name.
+    def from_str(cls, string: str) -> TastyMap:
+        """Creates a TastyMap instance from a string name.
 
         Args:
             string: Name of the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance.
+            TastyMap: A new TastyMap instance.
         """
         cmap = get_cmap(string)  # type: ignore
         cmap_array = cmap_to_array(cmap)
@@ -85,7 +85,7 @@ class TastyColorMap:
         cmap = LinearSegmentedColormap.from_list(
             new_name, cmap_array, N=len(cmap_array)
         )
-        return TastyColorMap(cmap, name=new_name)
+        return TastyMap(cmap, name=new_name)
 
     @classmethod
     def from_list(
@@ -93,15 +93,15 @@ class TastyColorMap:
         colors: Sequence,
         name: str = "custom_tastymap",
         color_model: ColorModel | str = ColorModel.RGBA,
-    ) -> TastyColorMap:
-        """Creates a TastyColorMap instance from a list of colors.
+    ) -> TastyMap:
+        """Creates a TastyMap instance from a list of colors.
 
         Args:
             colors: List of colors.
             name: Name of the colormap. Defaults to "custom_tastymap".
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance.
+            TastyMap: A new TastyMap instance.
         """
         if not isinstance(colors, Sequence):
             raise TypeError(f"Expected Sequence; received {type(colors)!r}.")
@@ -113,70 +113,70 @@ class TastyColorMap:
             cmap_array = hsv_to_rgb(cmap_array)
 
         cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
-        return TastyColorMap(cmap)
+        return TastyMap(cmap)
 
     @classmethod
     def from_listed_colormap(
         cls,
         listed_colormap: ListedColormap,
         name: str = "custom_tastymap",
-    ) -> TastyColorMap:
-        """Creates a TastyColorMap instance from a ListedColormap.
+    ) -> TastyMap:
+        """Creates a TastyMap instance from a ListedColormap.
 
         Args:
             listed_colormap: The colormap to be used.
             name: Name of the colormap. Defaults to "custom_tastymap".
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance.
+            TastyMap: A new TastyMap instance.
         """
         return cls.from_list(listed_colormap.colors, name=name)  # type: ignore
 
-    def resize(self, num_colors: int) -> TastyColorMap:
+    def resize(self, num_colors: int) -> TastyMap:
         """Resizes the colormap to a specified number of colors.
 
         Args:
             num_colors: Number of colors to resize to.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the interpolated colormap.
+            TastyMap: A new TastyMap instance with the interpolated colormap.
         """
         cmap = LinearSegmentedColormap.from_list(
             self.cmap.name, self._cmap_array, N=num_colors
         )  # TODO: reset extremes with helper func
-        return TastyColorMap(cmap)
+        return TastyMap(cmap)
 
-    def register(self, name: str | None = None, echo: bool = True) -> TastyColorMap:
+    def register(self, name: str | None = None, echo: bool = True) -> TastyMap:
         """Registers the colormap with matplotlib.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the registered colormap.
+            TastyMap: A new TastyMap instance with the registered colormap.
         """
         tmap = self.rename(name) if name else self
         colormaps.register(self.cmap, name=tmap.cmap.name, force=True)
         if echo:
             print(
-                f"Sucessfully registered the colormap; "
+                f"Successfully registered the colormap; "
                 f"to use, set `cmap={tmap.cmap.name!r}` in your plot."
             )
         return tmap
 
-    def rename(self, name: str) -> TastyColorMap:
+    def rename(self, name: str) -> TastyMap:
         """Renames the colormap.
 
         Args:
             name (str): New name for the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the renamed colormap.
+            TastyMap: A new TastyMap instance with the renamed colormap.
         """
-        return TastyColorMap(self.cmap, name=name)
+        return TastyMap(self.cmap, name=name)
 
-    def reverse(self) -> TastyColorMap:
+    def reverse(self) -> TastyMap:
         """Reverses the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the reversed colormap.
+            TastyMap: A new TastyMap instance with the reversed colormap.
         """
         return self[::-1]
 
@@ -215,7 +215,7 @@ class TastyColorMap:
         bad: str | tuple | None = None,
         under: str | tuple | None = None,
         over: str | tuple | None = None,
-    ) -> TastyColorMap:
+    ) -> TastyMap:
         """Sets the colors for bad, underflow, and overflow values.
 
         Args:
@@ -224,11 +224,11 @@ class TastyColorMap:
             over: Color for overflow values. Defaults to None.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the updated colormap.
+            TastyMap: A new TastyMap instance with the updated colormap.
         """
         cmap = self.cmap.copy()
         cmap.set_extremes(bad=bad, under=under, over=over)  # type: ignore
-        return TastyColorMap(cmap)
+        return TastyMap(cmap)
 
     def tweak_hsv(
         self,
@@ -236,7 +236,7 @@ class TastyColorMap:
         saturation: float | None = None,
         value: float | None = None,
         name: str | None = None,
-    ) -> TastyColorMap:
+    ) -> TastyMap:
         """Tweaks the hue, saturation, and value of the colormap.
 
         Args:
@@ -246,7 +246,7 @@ class TastyColorMap:
             name: Name of the new colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the tweaked colormap.
+            TastyMap: A new TastyMap instance with the tweaked colormap.
         """
         cmap_array = self._cmap_array.copy()
         cmap_array[:, :3] = rgb_to_hsv(cmap_array[:, :3])
@@ -267,7 +267,7 @@ class TastyColorMap:
         cmap = LinearSegmentedColormap.from_list(
             name or self.cmap.name, cmap_array, N=len(cmap_array)
         )
-        return TastyColorMap(cmap)
+        return TastyMap(cmap)
 
     def __iter__(self) -> Generator[np.ndarray, None, None]:
         """Iterates over the colormap.
@@ -277,17 +277,17 @@ class TastyColorMap:
         """
         yield from self._cmap_array
 
-    def __getitem__(self, indices: int | float | slice | Sequence) -> TastyColorMap:
+    def __getitem__(self, indices: int | float | slice | Sequence) -> TastyMap:
         """Gets a subset of the colormap.
 
         Args:
             indices: Indices to subset the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the subset colormap.
+            TastyMap: A new TastyMap instance with the subset colormap.
         """
         cmap = subset_cmap(self.cmap, indices)
-        return TastyColorMap(cmap)
+        return TastyMap(cmap)
 
     def _repr_html_(self) -> str:
         """Returns an HTML representation of the colormap.
@@ -297,122 +297,122 @@ class TastyColorMap:
         """
         return self.cmap._repr_html_()
 
-    def __add__(self, hue: float) -> TastyColorMap:
+    def __add__(self, hue: float) -> TastyMap:
         """Adds a hue factor to the colormap.
 
         Args:
             hue: Hue factor to add.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the hue
+            TastyMap: A new TastyMap instance with the hue
                 added to the colormap.
         """
         return self.tweak_hsv(hue=hue)
 
-    def __sub__(self, hue: float) -> TastyColorMap:
+    def __sub__(self, hue: float) -> TastyMap:
         """Subtracts a hue factor to the colormap.
 
         Args:
             hue: Hue factor to subtract.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the hue
+            TastyMap: A new TastyMap instance with the hue
                 subtracted from the colormap.
         """
         return self.tweak_hsv(hue=-hue)
 
-    def __mul__(self, saturation: float) -> TastyColorMap:
+    def __mul__(self, saturation: float) -> TastyMap:
         """Multiplies a saturation factor to the colormap.
 
         Args:
             saturation: Saturation factor to multiply.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the saturation
+            TastyMap: A new TastyMap instance with the saturation
                 multiplied to the colormap.
         """
         return self.tweak_hsv(saturation=saturation)
 
-    def __truediv__(self, saturation: float) -> TastyColorMap:
+    def __truediv__(self, saturation: float) -> TastyMap:
         """Divides a saturation factor to the colormap.
 
         Args:
             saturation: Saturation factor to divide.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the saturation
+            TastyMap: A new TastyMap instance with the saturation
                 divided from the colormap.
         """
         return self.tweak_hsv(saturation=1 / saturation)
 
-    def __pow__(self, value: float) -> TastyColorMap:
+    def __pow__(self, value: float) -> TastyMap:
         """Raises the brightness value factor to the colormap.
 
         Args:
             value: Brightness value factor to raise.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the brightness value
+            TastyMap: A new TastyMap instance with the brightness value
                 raised to the colormap.
         """
         return self.tweak_hsv(value=value)
 
-    def __invert__(self) -> TastyColorMap:
+    def __invert__(self) -> TastyMap:
         """Reverses the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the reversed colormap.
+            TastyMap: A new TastyMap instance with the reversed colormap.
         """
         return self.reverse()
 
-    def __and__(self, tmap: TastyColorMap) -> TastyColorMap:
-        """Combines two TastyColorMap instances.
+    def __and__(self, tmap: TastyMap) -> TastyMap:
+        """Combines two TastyMap instances.
 
         Args:
-            tmap: Another TastyColorMap instance to combine with.
+            tmap: Another TastyMap instance to combine with.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the combined colormap.
+            TastyMap: A new TastyMap instance with the combined colormap.
         """
-        if not isinstance(tmap, TastyColorMap):
+        if not isinstance(tmap, TastyMap):
             raise TypeError(
-                f"Can only combine TastyColorMap instances; received {type(tmap)!r}."
+                f"Can only combine TastyMap instances; received {type(tmap)!r}."
             )
         name = self.cmap.name + "_" + tmap.cmap.name
         cmap_array = np.concatenate([self._cmap_array, cmap_to_array(tmap.cmap)])
         cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
-        return TastyColorMap(cmap)
+        return TastyMap(cmap)
 
-    def __or__(self, num_colors: int) -> TastyColorMap:
+    def __or__(self, num_colors: int) -> TastyMap:
         """Interpolates the colormap to a specified number of colors.
 
         Args:
             num_colors: Number of colors to resize to.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the interpolated colormap.
+            TastyMap: A new TastyMap instance with the interpolated colormap.
         """
         return self.resize(num_colors)
 
-    def __lshift__(self, name: str) -> TastyColorMap:
+    def __lshift__(self, name: str) -> TastyMap:
         """Renames the colormap.
 
         Args:
             name: New name for the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the renamed colormap.
+            TastyMap: A new TastyMap instance with the renamed colormap.
         """
         return self.rename(name)
 
-    def __rshift__(self, name: str) -> TastyColorMap:
+    def __rshift__(self, name: str) -> TastyMap:
         """Registers the colormap with matplotlib.
 
         Args:
             name: Name of the colormap.
 
         Returns:
-            TastyColorMap: A new TastyColorMap instance with the registered colormap.
+            TastyMap: A new TastyMap instance with the registered colormap.
         """
         return self.register(name)
 
@@ -437,15 +437,15 @@ class TastyColorMap:
         return len(self._cmap_array)
 
     def __eq__(self, other: Any) -> bool:
-        """Checks if two TastyColorMap instances are equal.
+        """Checks if two TastyMap instances are equal.
 
         Args:
-            other: Another TastyColorMap instance to compare with.
+            other: Another TastyMap instance to compare with.
 
         Returns:
-            bool: True if the two TastyColorMap instances are equal; False otherwise.
+            bool: True if the two TastyMap instances are equal; False otherwise.
         """
-        if not isinstance(other, TastyColorMap):
+        if not isinstance(other, TastyMap):
             return False
         cmap_array = other._cmap_array
         return bool(np.all(self._cmap_array == cmap_array))
@@ -459,18 +459,18 @@ class TastyColorMap:
         return f"{self.cmap.name} ({len(self)} colors)"
 
     def __repr__(self) -> str:
-        """Returns a string representation of the TastyColorMap instance.
+        """Returns a string representation of the TastyMap instance.
 
         Returns:
-            str: String representation of the TastyColorMap instance.
+            str: String representation of the TastyMap instance.
         """
-        return f"TastyColorMap({self.cmap.name!r})"
+        return f"TastyMap({self.cmap.name!r})"
 
 
-class TastyColorBar(ABC):
+class TastyBar(ABC):
     def __init__(
         self,
-        tmap: TastyColorMap,
+        tmap: TastyMap,
         bounds: tuple[float, float] | Sequence[float],
         labels: list[str] | None = None,
         uniform_spacing: bool = True,
@@ -489,10 +489,10 @@ class TastyColorBar(ABC):
         """
 
 
-class MatplotlibTastyColorBar(TastyColorBar):
+class MatplotlibTastyBar(TastyBar):
     def __init__(
         self,
-        tmap: TastyColorMap,
+        tmap: TastyMap,
         bounds: slice[float, float, float] | Sequence[float],
         labels: list[str] | None = None,
         uniform_spacing: bool = True,
@@ -501,10 +501,10 @@ class MatplotlibTastyColorBar(TastyColorBar):
         clip: bool | None = None,
         **colorbar_kwargs: dict[str, Any],
     ):
-        """Initializes a MatplotlibTastyColorBar instance.
+        """Initializes a MatplotlibTastyBar instance.
 
         Args:
-            tmap: A TastyColorMap instance.
+            tmap: A TastyMap instance.
             bounds: Bounds for the colorbar.
             labels: Labels for the colorbar. Defaults to None.
             uniform_spacing: Whether to use uniform spacing for the colorbar.
@@ -534,6 +534,7 @@ class MatplotlibTastyColorBar(TastyColorBar):
                 num_ticks = min(num_colors - 1, 11)
                 ticks = np.linspace(vmin, vmax, num_ticks)
             else:
+                provided_ticks = True
                 ticks = np.arange(vmin, vmax + step, step)
 
         if center is None and provided_ticks:
