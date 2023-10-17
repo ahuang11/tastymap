@@ -5,7 +5,7 @@ from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from tastymap.utils import cmap_to_array, get_cmap, replace_match, subset_cmap
 
 
-class TestGetCmap:
+class TestGetmap:
     def test_valid(self):
         cmap = get_cmap("viridis")
         assert isinstance(cmap, ListedColormap)
@@ -42,7 +42,7 @@ class TestGetCmap:
             get_cmap(123)
 
 
-class TestSubsetCmap:
+class TestSubsetmap:
     @pytest.fixture
     def basic_cmap(self):
         return LinearSegmentedColormap.from_list(
@@ -92,7 +92,7 @@ class TestSubsetCmap:
             subset_cmap(basic_cmap, [0, 1000])
 
 
-class TestCmapToArray:
+class TestmapToArray:
     def test_from_str(self):
         arr = cmap_to_array("viridis")
         assert isinstance(arr, np.ndarray)

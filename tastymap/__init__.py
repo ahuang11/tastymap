@@ -1,7 +1,8 @@
 """colormap palettes for your palate"""
 
-from .core import TastyMap, cook_tmap
+from .core import cook_tmap, pair_tbar
+from .models import TastyBar, TastyMap
 
 __version__ = "0.0.0"
 
-__all__ = ["cook_tmap", "TastyMap"]
+__all__ = ["cook_tmap", "pair_tbar", "TastyMap", "TastyBar"]
