@@ -18,6 +18,7 @@ from matplotlib.colors import (
     rgb2hex,
     rgb_to_hsv,
 )
+from matplotlib.pyplot import ScalarMappable
 from matplotlib.ticker import FuncFormatter
 
 from .utils import cmap_to_array, get_cmap, subset_cmap
@@ -471,7 +472,7 @@ class TastyBar(ABC):
     def __init__(
         self,
         tmap: TastyMap,
-        bounds: tuple[float, float] | Sequence[float],
+        bounds: slice | Sequence[float],
         labels: list[str] | None = None,
         uniform_spacing: bool = True,
     ):
@@ -481,7 +482,7 @@ class TastyBar(ABC):
         self.uniform_spacing = uniform_spacing
 
     @abstractmethod
-    def add_to(self, plot: Any) -> None:
+    def add_to(self, plot: Any):
         """Adds a colorbar to a plot.
 
         Args:
@@ -493,7 +494,7 @@ class MatplotlibTastyBar(TastyBar):
     def __init__(
         self,
         tmap: TastyMap,
-        bounds: slice[float, float, float] | Sequence[float],
+        bounds: slice | Sequence[float],
         labels: list[str] | None = None,
         uniform_spacing: bool = True,
         center: bool | None = None,
@@ -521,23 +522,22 @@ class MatplotlibTastyBar(TastyBar):
         self.spacing = "uniform" if uniform_spacing else "proportional"
 
         num_colors = len(self.tmap)
-        provided_ticks = not isinstance(self.bounds, slice)
-        if provided_ticks:
-            ticks = np.array(self.bounds)
-            ticks.sort()
-            vmin, vmax = ticks[0], ticks[-1]
-        else:
-            vmin = self.bounds.start
-            vmax = self.bounds.stop
-            step = self.bounds.step
+        is_slice = isinstance(self.bounds, slice)
+        if is_slice:
+            vmin = self.bounds.start  # type: ignore
+            vmax = self.bounds.stop  # type: ignore
+            step = self.bounds.step  #  type: ignore
             if step is None:
                 num_ticks = min(num_colors - 1, 11)
                 ticks = np.linspace(vmin, vmax, num_ticks)
             else:
-                provided_ticks = True
                 ticks = np.arange(vmin, vmax + step, step)
+        else:
+            ticks = np.array(self.bounds)
+            ticks.sort()
+            vmin, vmax = ticks[0], ticks[-1]
 
-        if center is None and provided_ticks:
+        if center is None and not is_slice:
             center = False
 
         if clip is None:
@@ -546,7 +546,7 @@ class MatplotlibTastyBar(TastyBar):
         norm = None
         if center is None:
             norm = Normalize(vmin=vmin, vmax=vmax, clip=clip)
-            if not provided_ticks:
+            if is_slice:
                 ticks = None  # let matplotlib decide
         elif center:
             norm_bins = ticks + 0.5
@@ -561,7 +561,9 @@ class MatplotlibTastyBar(TastyBar):
         format = None
         if labels is not None:
             format = FuncFormatter(
-                lambda _, index: labels[index] if index < len(labels) else ""
+                lambda _, index: labels[index]  # type: ignore
+                if index < len(labels)  # type: ignore
+                else ""
             )
 
         self.norm = norm
@@ -586,12 +588,14 @@ class MatplotlibTastyBar(TastyBar):
         colorbar_kwargs.update(self.colorbar_kwargs)
         return colorbar_kwargs
 
-    def add_to(self, plot: plt.Axes) -> None:
+    def add_to(self, plot: ScalarMappable) -> ScalarMappable:
         """Adds a colorbar to a plot.
 
         Args:
             plot: A matplotlib ax.
         """
-        plot.set(**self.plot_settings)
+        plot_settings = self.plot_settings
+        plot.cmap = plot_settings["cmap"]
+        plot.norm = plot_settings["norm"]
         plt.colorbar(plot, **self.colorbar_settings)
         return plot

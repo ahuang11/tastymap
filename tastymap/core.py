@@ -81,7 +81,7 @@ def pair_tbar(
 ):
     tmap = colors_or_cmap_or_tmap
     if not isinstance(tmap, TastyMap):
-        tmap = cook_tmap(colors_or_cmap_or_tmap)
+        tmap = cook_tmap(colors_or_cmap_or_tmap)  # type: ignore
 
     if hasattr(plot, "axes"):
         tbar = MatplotlibTastyBar(
