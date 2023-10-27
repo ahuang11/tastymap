@@ -1,5 +1,5 @@
-site_name: tastymap
-site_description: colormap palettes for your palate
+site_name: TastyMap
+site_description: Color palettes for your palate
 
 repo_url: https://github.com/ahuang11/tastymap
 repo_name: ahuang11/tastymap
@@ -12,8 +12,8 @@ theme:
         # Palette toggle for light mode
         - media: "(prefers-color-scheme: light)"
           scheme: default
-          primary: grey
-          accent: deep orange
+          primary: black
+          accent: black
           toggle:
             icon: material/brightness-7
             name: Switch to dark mode
@@ -21,8 +21,8 @@ theme:
         # Palette toggle for dark mode
         - media: "(prefers-color-scheme: dark)"
           scheme: slate
-          primary: grey
-          accent: deep orange
+          primary: black
+          accent: black
           toggle:
             icon: material/brightness-4
             name: Switch to light mode
@@ -54,6 +54,7 @@ watch:
 
 nav:
     - About: index.md
+    - Why: why.md
     - Reference:
         - Core: reference/core.md
         - Utils: reference/utils.md
