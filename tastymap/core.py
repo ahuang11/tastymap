@@ -5,7 +5,7 @@ from typing import Any
 
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 
-from tastymap.models import ColorModel, MatplotlibTastyBar, TastyMap
+from .models import ColorModel, HoloViewsTastyBar, MatplotlibTastyBar, TastyMap
 
 
 def cook_tmap(
@@ -13,9 +13,9 @@ def cook_tmap(
     num_colors: int | None = None,
     reverse: bool = False,
     name: str | None = None,
-    bad: str | tuple | None = None,
-    under: str | tuple | None = None,
-    over: str | tuple | None = None,
+    bad: str | None = None,
+    under: str | None = None,
+    over: str | None = None,
     from_color_model: ColorModel | str | None = None,
 ) -> TastyMap:
     """Cook a completely new colormap or modify an existing one.
@@ -74,11 +74,24 @@ def cook_tmap(
 def pair_tbar(
     plot: Any,
     colors_or_cmap_or_tmap: (Sequence | str | Colormap | TastyMap),
-    bounds: tuple[float, float] | Sequence[float],
+    bounds: slice | Sequence[float],
     labels: list[str] | None = None,
     uniform_spacing: bool = True,
     **tbar_kwargs,
 ):
+    """Create a custom colorbar for a plot.
+
+    Args:
+        plot: A matplotlib or HoloViews plot.
+        colors_or_cmap_or_tmap: A list of colors or a colormap instance or string.
+        bounds: Bounds of the colorbar.
+        labels: Labels for the colorbar.
+        uniform_spacing: Whether to space the colors uniformly.
+        tbar_kwargs: Keyword arguments for the colorbar.
+
+    Returns:
+        The plot.
+    """
     tmap = colors_or_cmap_or_tmap
     if not isinstance(tmap, TastyMap):
         tmap = cook_tmap(colors_or_cmap_or_tmap)  # type: ignore
@@ -91,6 +104,14 @@ def pair_tbar(
             uniform_spacing=uniform_spacing,
             **tbar_kwargs,
         )
+    elif hasattr(plot, "opts"):
+        tbar = HoloViewsTastyBar(
+            tmap,
+            bounds=bounds,
+            labels=labels,
+            uniform_spacing=uniform_spacing,
+            **tbar_kwargs,
+        )
     else:
-        raise NotImplementedError("Only matplotlib plots are supported.")
+        raise NotImplementedError
     return tbar.add_to(plot)

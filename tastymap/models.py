@@ -133,6 +133,16 @@ class TastyMap:
         """
         return cls.from_list(listed_colormap.colors, name=name)  # type: ignore
 
+    def _from_list_with_extremes(self, *args, **kwargs) -> LinearSegmentedColormap:
+        """Creates a TastyMap instance from a list of colors with bad, under, and over colors."""
+        cmap = LinearSegmentedColormap.from_list(*args, **kwargs)
+        cmap.set_extremes(
+            bad=self.cmap.get_bad(),
+            under=self.cmap.get_under(),
+            over=self.cmap.get_over(),
+        )
+        return cmap
+
     def resize(self, num_colors: int) -> TastyMap:
         """Resizes the colormap to a specified number of colors.
 
@@ -142,9 +152,9 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance with the interpolated colormap.
         """
-        cmap = LinearSegmentedColormap.from_list(
+        cmap = self._from_list_with_extremes(
             self.cmap.name, self._cmap_array, N=num_colors
-        )  # TODO: reset extremes with helper func
+        )
         return TastyMap(cmap)
 
     def register(self, name: str | None = None, echo: bool = True) -> TastyMap:
@@ -213,9 +223,9 @@ class TastyMap:
 
     def set_extremes(
         self,
-        bad: str | tuple | None = None,
-        under: str | tuple | None = None,
-        over: str | tuple | None = None,
+        bad: str | None = None,
+        under: str | None = None,
+        over: str | None = None,
     ) -> TastyMap:
         """Sets the colors for bad, underflow, and overflow values.
 
@@ -265,7 +275,7 @@ class TastyMap:
                 raise ValueError("Value must be between 0 and 3.")
             cmap_array[:, 2] = cmap_array[:, 2] * value
         cmap_array[:, :3] = hsv_to_rgb(np.clip(cmap_array[:, :3], 0, 1))
-        cmap = LinearSegmentedColormap.from_list(
+        cmap = self._from_list_with_extremes(
             name or self.cmap.name, cmap_array, N=len(cmap_array)
         )
         return TastyMap(cmap)
@@ -381,7 +391,7 @@ class TastyMap:
             )
         name = self.cmap.name + "_" + tmap.cmap.name
         cmap_array = np.concatenate([self._cmap_array, cmap_to_array(tmap.cmap)])
-        cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
+        cmap = self._from_list_with_extremes(name, cmap_array, N=len(cmap_array))
         return TastyMap(cmap)
 
     def __or__(self, num_colors: int) -> TastyMap:

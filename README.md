@@ -7,6 +7,7 @@ The primary goal of TastyMap is to:
 1. Cook custom, or adjust existing, colormaps
 2. Pair those colormaps with a plot
 
+
 ## 📦 Installation
 
 ```bash
