@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+import numpy as np
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 
 from .models import ColorModel, HoloViewsTastyBar, MatplotlibTastyBar, TastyMap
@@ -40,12 +41,14 @@ def cook_tmap(
         tmap = TastyMap(colors_or_cmap)
     elif isinstance(colors_or_cmap, ListedColormap):
         tmap = TastyMap.from_listed_colormap(colors_or_cmap)
-    elif isinstance(colors_or_cmap, Sequence):
+    elif isinstance(colors_or_cmap, (Sequence, np.ndarray)):
         if not isinstance(colors_or_cmap[0], str) and from_color_model is None:
             raise ValueError(
                 "Please specify from_color_model to differentiate "
                 "between RGB and HSV color models."
             )
+        if len(colors_or_cmap) == 1:
+            colors_or_cmap = colors_or_cmap * 2
         tmap = TastyMap.from_list(
             colors_or_cmap, color_model=from_color_model or ColorModel.RGB
         )

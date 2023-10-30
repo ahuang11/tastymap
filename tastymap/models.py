@@ -104,7 +104,7 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance.
         """
-        if not isinstance(colors, Sequence):
+        if not isinstance(colors, (Sequence, np.ndarray)):
             raise TypeError(f"Expected Sequence; received {type(colors)!r}.")
         if colors is None or len(colors) == 0:  # type: ignore
             raise ValueError("Must provide at least one color.")
