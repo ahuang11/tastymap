@@ -9,7 +9,15 @@ from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 from matplotlib.pyplot import colormaps
 from matplotlib.pyplot import get_cmap as _get_cmap
 
-_LOWER_COLORMAPS = {cmap.lower(): cmap for cmap in colormaps()}
+
+def get_registered_cmaps() -> dict[str, str]:
+    """
+    Get a mapping of registered colormaps.
+
+    Returns:
+        A mapping of registered colormaps.
+    """
+    return {cmap.lower(): cmap for cmap in colormaps()}
 
 
 def get_cmap(cmap: str) -> Colormap:
@@ -22,10 +30,11 @@ def get_cmap(cmap: str) -> Colormap:
     Returns:
         A colormap.
     """
+    lower_colormaps = get_registered_cmaps()
     try:
-        return _get_cmap(_LOWER_COLORMAPS[cmap.lower()])
+        return _get_cmap(lower_colormaps[cmap.lower()])
     except KeyError:
-        matches = get_close_matches(cmap, _LOWER_COLORMAPS.values(), n=5, cutoff=0.1)
+        matches = get_close_matches(cmap, lower_colormaps.values(), n=5, cutoff=0.1)
         if matches:
             raise ValueError(
                 f"Unknown colormap '{cmap}'. Did you mean one of these: {matches}?"

@@ -1,5 +1,5 @@
 import ast
-from textwrap import dedent
+from io import StringIO
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,26 +11,21 @@ from matplotlib.colors import hsv_to_rgb, rgb2hex
 
 from .core import cook_tmap, pair_tbar
 from .models import ColorModel, TastyBar, TastyMap
-from .utils import _LOWER_COLORMAPS, cmap_to_array, get_cmap
+from .utils import get_cmap, get_registered_cmaps
 
 pn.extension("jsoneditor", notifications=True)
 pn.Column.sizing_mode = "stretch_width"
-
-
-_REGISTERED_CMAPS = {
-    cmap_name: get_cmap(cmap_name) for cmap_name in _LOWER_COLORMAPS.values()
-}
-_COPY_JS = "navigator.clipboard.writeText(source);"
 
 
 class TastyView(pn.viewable.Viewer):
     reverse = param.Boolean(
         default=False,
         doc="Whether to reverse the colormap. Defaults to False.",
+        label="Reverse Colormap",
     )
 
     cmap = param.ObjectSelector(
-        default="magma",
+        default="accent",
         doc="The colormap to use. Defaults to 'viridis'.",
     )
 
@@ -46,7 +41,7 @@ class TastyView(pn.viewable.Viewer):
         doc="Color model of the input colors to determine whether to use RGB or HSV.",
     )
 
-    num_colors = param.Integer(default=11, bounds=(3, 256), doc="Number of colors.")
+    num_colors = param.Integer(default=11, bounds=(2, 256), doc="Number of colors.")
 
     name = param.String(
         default=None, doc="Name of the custom colormap. Defaults to None."
@@ -70,10 +65,13 @@ class TastyView(pn.viewable.Viewer):
     custom_name = param.String(
         default="custom_tastymap",
         doc="Name of the custom colormap. Defaults to 'custom_tastymap'.",
+        label="Colormap name",
     )
 
     uniform_spacing = param.Boolean(
-        default=False, doc="Whether to use uniform spacing."
+        default=False,
+        doc="Whether to use uniform spacing.",
+        label="Uniform Spacing Between Ticks",
     )
 
     bounds = param.List(
@@ -92,42 +90,36 @@ class TastyView(pn.viewable.Viewer):
 
     _tbar = param.Parameter(doc="The tastybar image.", precedence=-1)
 
+    _registered_cmaps = param.Dict(doc="Registered colormaps.", precedence=-1)
+
     _active_index = param.Integer(default=0, precedence=-1)
 
     def __init__(self, **params):
         self._plot = pn.pane.Matplotlib(tight=True, sizing_mode="stretch_width")
-        self._reference_image = pn.pane.Image(height=500, sizing_mode="stretch_width")
+        self._reference_image = pn.pane.Image(height=300, sizing_mode="stretch_width")
         self._palette_box = pn.FlexBox(min_height=100, sizing_mode="stretch_width")
         self._tmap_html = pn.pane.HTML(height=115)
         self._mpl_code_md = pn.pane.Markdown(
             name="Matplotlib",
-            height=115,
+            min_height=300,
             sizing_mode="stretch_width",
             margin=(-20, 0, 0, 0),
         )
         self._tmap_code_md = pn.pane.Markdown(
             name="TastyMap",
-            height=115,
+            min_height=300,
             sizing_mode="stretch_width",
             margin=(-20, 0, 0, 0),
-        )
-        self._mpl_copy_button = pn.widgets.Button(
-            name="Copy to Clipboard",
-            sizing_mode="fixed",
-            margin=(20, 5, 5, 5),
-        )
-        self._tmap_copy_button = pn.widgets.Button(
-            name="Copy to Clipboard",
-            sizing_mode="fixed",
-            margin=(20, 5, 5, 5),
         )
         self._history_box = pn.FlexBox(height=100)
         super().__init__(**params)
 
         # cmap widgets
 
+        cmaps = {cmap_name: get_cmap(cmap_name) for cmap_name in get_registered_cmaps()}
+        cmaps = self._sort_cmaps(cmaps)
         self.cmap_input = pn.widgets.ColorMap(
-            options=_REGISTERED_CMAPS,
+            options=cmaps,
             ncols=2,
             swatch_width=55,
             name="Colormap",
@@ -158,8 +150,6 @@ class TastyView(pn.viewable.Viewer):
             self.param.colors,
             sizing_mode="stretch_width",
             margin=(5, 30, 5, 20),
-            menu=False,
-            search=False,
         )
         from_color_model_select = pn.widgets.Select.from_param(
             self.param.from_color_model,
@@ -177,14 +167,31 @@ class TastyView(pn.viewable.Viewer):
             sizing_mode="stretch_width",
             margin=(5, 30, 5, 20),
         )
+        colors_upload = pn.widgets.FileInput(
+            accept=".rgb,.txt",
+            sizing_mode="stretch_width",
+            margin=(10, 30, 5, 20),
+        )
+        colors_clear = pn.widgets.Button(
+            name="Clear",
+            sizing_mode="stretch_width",
+            margin=(5, 30, 5, 20),
+        )
         colors_widgets = pn.Column(
-            pn.Tabs(("Text", colors_input), ("Pick", colors_picker)),
-            self.colors_select,
             from_color_model_select,
+            pn.Tabs(
+                ("Text", colors_input),
+                ("Pick", colors_picker),
+                ("Upload", colors_upload),
+                ("Clear", colors_clear),
+            ),
+            self.colors_select,
         )
 
         colors_input.param.watch(self._add_color, "value")
         colors_picker.param.watch(self._add_color, "value")
+        colors_upload.param.watch(self._add_color, "value")
+        colors_clear.on_click(lambda event: setattr(self.colors_select, "value", []))
 
         # reference widgets
 
@@ -211,7 +218,6 @@ class TastyView(pn.viewable.Viewer):
             "bad",
             "under",
             "over",
-            "custom_name",
         ]
         tmap_widgets = pn.Param(
             self,
@@ -242,6 +248,32 @@ class TastyView(pn.viewable.Viewer):
             },
         )
 
+        # finalize widgets
+
+        name_input = pn.widgets.TextInput.from_param(
+            self.param.custom_name,
+            sizing_mode="stretch_width",
+            margin=(5, 30, 5, 20),
+        )
+        register_button = pn.widgets.Button(
+            name="Register Colormap for Session",
+            sizing_mode="stretch_width",
+            margin=(5, 30, 5, 20),
+        )
+        self.colors_download = pn.widgets.FileDownload(
+            filename=f"{self.custom_name}_hexcodes.txt",
+            callback=pn.bind(self._download_colors, self.param._tmap),
+            sizing_mode="stretch_width",
+            margin=(5, 30, 5, 20),
+        )
+        finalize_widgets = pn.Column(
+            name_input,
+            register_button,
+            self.colors_download,
+        )
+
+        register_button.on_click(self._register_tmap)
+
         # layout widgets
 
         self._colors_or_cmap_tabs = pn.Tabs(
@@ -257,6 +289,8 @@ class TastyView(pn.viewable.Viewer):
             tmap_widgets,
             pn.layout.Divider(),
             tbar_widgets,
+            pn.layout.Divider(),
+            finalize_widgets,
         )
 
         self.palette_tabs = pn.Tabs(
@@ -267,25 +301,8 @@ class TastyView(pn.viewable.Viewer):
                 pn.pane.HTML("<h2>⏱️ History</h2>"), self._history_box, name="History"
             ),
         )
-        self.colorbar_col = pn.Tabs(
-            pn.Column(
-                pn.pane.HTML("<h2>🍭 Colormap</h2>"), self._tmap_html, name="Colormap"
-            ),
-            pn.Column(
-                pn.Row(
-                    pn.pane.HTML("<h2>🖥️ Matplotlib Code</h2>"), self._mpl_copy_button
-                ),
-                self._mpl_code_md,
-                name="Matplotlib",
-            ),
-            pn.Column(
-                pn.Row(
-                    pn.pane.HTML("<h2>🖥️ TastyMap Code</h2>"), self._tmap_copy_button
-                ),
-                self._tmap_code_md,
-                name="TastyMap",
-            ),
-            dynamic=True,
+        self.colorbar_col = pn.Column(
+            pn.pane.HTML("<h2>🍭 Colormap</h2>"), self._tmap_html, name="Colormap"
         )
         self.image_tabs = pn.Tabs(
             pn.Column(
@@ -297,6 +314,20 @@ class TastyView(pn.viewable.Viewer):
                 pn.pane.HTML("<h2>🌇 Reference Image</h2>"),
                 self._reference_image,
                 name="Reference Image",
+            ),
+            pn.Column(
+                pn.Row(
+                    pn.pane.HTML("<h2>🖥️ Matplotlib Code</h2>"),
+                ),
+                self._mpl_code_md,
+                name="Matplotlib Code",
+            ),
+            pn.Column(
+                pn.Row(
+                    pn.pane.HTML("<h2>🖥️ TastyMap Code</h2>"),
+                ),
+                self._tmap_code_md,
+                name="TastyMap Code",
             ),
             dynamic=True,
         )
@@ -317,15 +348,13 @@ class TastyView(pn.viewable.Viewer):
         if isinstance(self.colors_select.value, dict):
             value = list(value)
 
-        if self.cmap_method == "Prepend":
+        if self.cmap_method.value == "Prepend":
             value = palette + value
-        elif self.cmap_method == "Overwrite":
+        elif self.cmap_method.value == "Overwrite":
             value = palette[:]
         else:
             value = value + palette
-        self.colors_select.param.update(
-            value=value,
-        )
+        self.colors_select.param.update(value=value)
         self._active_index = 1
         self._add_to_history(palette)
 
@@ -334,28 +363,53 @@ class TastyView(pn.viewable.Viewer):
         if not new_event:
             return
 
+        if isinstance(new_event, bytes):
+            new_event = new_event.decode("utf-8")
+
         value = self.colors_select.value
         if isinstance(value, dict):
             value = list(value)
 
-        if "\n" in new_event:
-            new_event = new_event.split("\n")
+        if " " in new_event:
+            new_event = new_event.strip()
 
-        if new_event.count(",") >= 2:
-            new_event = ast.literal_eval(new_event)
+        if "\n" in new_event:
+            new_event = new_event.splitlines()
 
         if not isinstance(new_event, list):
             new_event = [new_event]
 
+        processed_colors = []
+        for color in new_event:
+            if not color.strip() or color.startswith("#"):
+                continue
+            try:
+                if " " in color or "," in color:
+                    color = np.array(
+                        ast.literal_eval(",".join(color.strip().split()))
+                    ).astype(float)
+                    if any(c > 1 for c in color):
+                        color /= 255
+                    color = tuple(color.round(2))
+            except Exception as exc:
+                pn.state.notifications.error(str(exc))
+                continue
+            processed_colors.append(color)
         try:
-            self.colors_select.param.update(value=value + new_event)
-            self._add_to_history(new_event)
+            self.colors_select.param.update(value=value + processed_colors)
+            self._add_to_history(processed_colors)
         except ValueError as exc:
-            self.colors_select.param.update(value=value)
-            pn.state.notifications.error(str(exc))
+            if len(value) > 2:
+                self.colors_select.param.update(value=value)
+                pn.state.notifications.error(str(exc))
         finally:
             if isinstance(event.obj, pn.widgets.TextInput):
                 event.obj.value = ""
+
+        try:
+            self.num_colors = len(self.colors_select.value)
+        except Exception:
+            pass
 
     def _add_reference(self, event):
         if not event.new:
@@ -378,6 +432,25 @@ class TastyView(pn.viewable.Viewer):
         new_history = self._history_box.objects + self._render_colors(value)
         self._history_box.objects = new_history[-26:]
 
+    def _register_tmap(self, event):
+        self._tmap.register(name=self.custom_name)
+        options = self.cmap_input.options
+        options[self.custom_name] = self._tmap.cmap
+        self.cmap_input.options = self._sort_cmaps(options)
+        pn.state.notifications.success(
+            f"Registered {self.custom_name} for this session and it can now be "
+            f"accessed under the Colormap tab.",
+            10000,
+        )
+
+    def _sort_cmaps(self, cmaps):
+        return dict(sorted(cmaps.items(), key=lambda item: item[0]))
+
+    def _download_colors(self, tmap):
+        colors_string = "\n".join(tmap.to_model("hex"))
+        buf = StringIO(colors_string)
+        return buf
+
     # param methods
     def _render_colors(self, colors):
         color_background_tuples = []
@@ -399,7 +472,7 @@ class TastyView(pn.viewable.Viewer):
                 f"<center style='background-color: lightgrey; color: black;'>{color}</center>",
                 styles={
                     "background-color": background_color,
-                    "font-size": "1.25em",
+                    "font-size": "0.75em",
                 },
                 height=75,
                 width=75,
@@ -463,22 +536,6 @@ class TastyView(pn.viewable.Viewer):
             f"cmap = tmap.cmap\n"
             f"```\n"
         )
-        self._mpl_copy_button.js_on_click(
-            args={
-                "source": self._mpl_code_md.object.strip()
-                .strip("`")
-                .replace("python\n", "")
-            },
-            code=_COPY_JS,
-        )
-        self._tmap_copy_button.js_on_click(
-            args={
-                "source": self._tmap_code_md.object.strip()
-                .strip("`")
-                .replace("python\n", "")
-            },
-            code=_COPY_JS,
-        )
 
     @pn.depends("_tmap", "bounds", "labels", "uniform_spacing", watch=True)
     def _pair_tbar(self):
@@ -503,6 +560,10 @@ class TastyView(pn.viewable.Viewer):
         )
         self._plot.object = fig
         plt.close(fig)
+
+    @pn.depends("custom_name", watch=True)
+    def _update_filename(self):
+        self.colors_download.filename = f"{self.custom_name}_hexcodes.txt"
 
     def __panel__(self):
         return pn.template.FastListTemplate(
