@@ -4,7 +4,9 @@
 
 Make, customize, and/or use colormaps, any way you like.
 
-## 📖 Example
+![tastykitchen](https://github.com/ahuang11/tastymap/assets/15331990/ce015064-2ffb-4da2-bb8e-4818fdd751ab)
+
+## 📖 Quick start
 
 Start cooking from pre-made colormaps...
 
@@ -14,6 +16,8 @@ from tastymap import cook_tmap
 tmap = cook_tmap("viridis", num_colors=12, reverse=True)
 tmap
 ```
+
+![viridis_12](https://github.com/ahuang11/tastymap/assets/15331990/ee9b429b-26d6-4eef-8128-a93f47a920ab)
 
 Or start from scratch!
 
@@ -29,7 +33,9 @@ tmap = cook_tmap(
 tmap
 ```
 
-Then pair them with your plots effortlessly:
+![rgb_256](https://github.com/ahuang11/tastymap/assets/15331990/b0964acc-56d1-4add-b9d4-fdc925756098)
+
+Then pair it with your plots effortlessly:
 
 ```python
 import numpy as np
@@ -48,6 +54,14 @@ pair_tbar(
 )
 ```
 
+![example](https://github.com/ahuang11/tastymap/assets/15331990/04ab9ea7-d836-44b8-843d-2cb65eddfe63)
+
+Try to craft your visual delight *interactively* with the TastyKitchen UI!
+
+```bash
+tastymap ui
+```
+
 Check out the [docs](https://ahuang11.github.io/tastymap) for more recipes!
 
 ## 📦 Installation
@@ -62,12 +76,6 @@ To get access to TastyKitchen UI, install `tastymap` with:
 
 ```bash
 pip install tastymap[ui]
-```
-
-Then start the UI with:
-
-```bash
-tastymap ui
 ```
 
 ---
