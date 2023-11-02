@@ -89,7 +89,7 @@ def pair_tbar(
     bounds: slice | Sequence[float],
     labels: list[str] | None = None,
     uniform_spacing: bool = True,
-    **tbar_kwargs,
+    **tbar_kwargs: dict[str, Any],
 ):
     """Create a custom colorbar for a plot.
 

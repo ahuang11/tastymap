@@ -2,5 +2,4 @@
 
 ::: tastymap.utils
     options:
-      show_source: false
-
+      show_source: true

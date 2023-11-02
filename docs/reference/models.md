@@ -1,5 +1,5 @@
-# Core
+# Models
 
-::: tastymap.core
+::: tastymap.models
     options:
       show_source: true

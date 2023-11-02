@@ -54,7 +54,8 @@ watch:
 
 nav:
     - About: index.md
-    - Why: why.md
+    - Usage: usage.md
     - Reference:
         - Core: reference/core.md
+        - Models: reference/models.md
         - Utils: reference/utils.md
