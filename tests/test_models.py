@@ -232,6 +232,13 @@ class TestTastyMap:
         for color in tmap:
             assert isinstance(color, np.ndarray)
 
+    def test_resize_with_extremes(self):
+        tmap = TastyMap.from_str("viridis")
+        result = tmap.set_extremes(bad="black", under="black", over="black").resize(10)
+        assert result.cmap.get_bad().tolist() == [0.0, 0.0, 0.0, 1.0]
+        assert result.cmap.get_over().tolist() == [0.0, 0.0, 0.0, 1.0]
+        assert result.cmap.get_under().tolist() == [0.0, 0.0, 0.0, 1.0]
+
 
 class TestMatplotlibTastyBar:
     @pytest.fixture

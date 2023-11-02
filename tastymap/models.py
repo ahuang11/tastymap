@@ -104,7 +104,7 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance.
         """
-        if not isinstance(colors, Sequence):
+        if not isinstance(colors, (Sequence, np.ndarray)):
             raise TypeError(f"Expected Sequence; received {type(colors)!r}.")
         if colors is None or len(colors) == 0:  # type: ignore
             raise ValueError("Must provide at least one color.")
@@ -133,6 +133,16 @@ class TastyMap:
         """
         return cls.from_list(listed_colormap.colors, name=name)  # type: ignore
 
+    def _from_list_with_extremes(self, *args, **kwargs) -> LinearSegmentedColormap:
+        """Creates a TastyMap instance from a list of colors with extreme values."""
+        cmap = LinearSegmentedColormap.from_list(*args, **kwargs)
+        cmap.set_extremes(
+            bad=self.cmap.get_bad(),  # type: ignore
+            under=self.cmap.get_under(),  # type: ignore
+            over=self.cmap.get_over(),  # type: ignore
+        )
+        return cmap
+
     def resize(self, num_colors: int) -> TastyMap:
         """Resizes the colormap to a specified number of colors.
 
@@ -142,9 +152,9 @@ class TastyMap:
         Returns:
             TastyMap: A new TastyMap instance with the interpolated colormap.
         """
-        cmap = LinearSegmentedColormap.from_list(
+        cmap = self._from_list_with_extremes(
             self.cmap.name, self._cmap_array, N=num_colors
-        )  # TODO: reset extremes with helper func
+        )
         return TastyMap(cmap)
 
     def register(self, name: str | None = None, echo: bool = True) -> TastyMap:
@@ -213,9 +223,9 @@ class TastyMap:
 
     def set_extremes(
         self,
-        bad: str | tuple | None = None,
-        under: str | tuple | None = None,
-        over: str | tuple | None = None,
+        bad: str | None = None,
+        under: str | None = None,
+        over: str | None = None,
     ) -> TastyMap:
         """Sets the colors for bad, underflow, and overflow values.
 
@@ -265,7 +275,7 @@ class TastyMap:
                 raise ValueError("Value must be between 0 and 3.")
             cmap_array[:, 2] = cmap_array[:, 2] * value
         cmap_array[:, :3] = hsv_to_rgb(np.clip(cmap_array[:, :3], 0, 1))
-        cmap = LinearSegmentedColormap.from_list(
+        cmap = self._from_list_with_extremes(
             name or self.cmap.name, cmap_array, N=len(cmap_array)
         )
         return TastyMap(cmap)
@@ -381,7 +391,7 @@ class TastyMap:
             )
         name = self.cmap.name + "_" + tmap.cmap.name
         cmap_array = np.concatenate([self._cmap_array, cmap_to_array(tmap.cmap)])
-        cmap = LinearSegmentedColormap.from_list(name, cmap_array, N=len(cmap_array))
+        cmap = self._from_list_with_extremes(name, cmap_array, N=len(cmap_array))
         return TastyMap(cmap)
 
     def __or__(self, num_colors: int) -> TastyMap:
@@ -599,3 +609,104 @@ class MatplotlibTastyBar(TastyBar):
         plot.norm = plot_settings["norm"]
         plt.colorbar(plot, **self.colorbar_settings)
         return plot
+
+
+class HoloViewsTastyBar(TastyBar):
+    def __init__(
+        self,
+        tmap: TastyMap,
+        bounds: slice | Sequence[float],
+        labels: list[str] | None = None,
+        uniform_spacing: bool = True,
+    ):
+        """Initializes a HoloViewsTastyBar instance.
+
+        Args:
+            tmap: A TastyMap instance.
+            bounds: Bounds for the colorbar.
+            labels: Labels for the colorbar. Defaults to None.
+            uniform_spacing: Whether to use uniform spacing for the colorbar.
+                Defaults to True.
+        """
+        super().__init__(tmap, bounds, labels, uniform_spacing)
+
+        from bokeh import models  # type: ignore
+
+        self._models = models
+        self.palette = self.tmap.to_model("hex").tolist()
+
+        self.factors = None
+        self.major_label_overrides = None
+
+        num_colors = len(self.tmap)
+        is_slice = isinstance(self.bounds, slice)
+        if is_slice:
+            vmin = self.bounds.start  # type: ignore
+            vmax = self.bounds.stop  # type: ignore
+            step = self.bounds.step  #  type: ignore
+            if step is None:
+                num_ticks = min(num_colors - 1, 11)
+                ticks = np.linspace(vmin, vmax, num_ticks)
+            else:
+                ticks = np.arange(vmin, vmax + step, step)
+        else:
+            ticks = np.array(self.bounds)
+            num_ticks = len(ticks)
+        self.ticks = ticks.tolist()
+
+        num_labels = len(labels) if labels else 0
+        if uniform_spacing:
+            if labels is None:
+                self.factors = [
+                    f"{self.ticks[i]} - {self.ticks[i + 1]}"
+                    for i in range(len(self.ticks) - 1)
+                ]
+            else:
+                self.factors = labels
+                if not num_labels == num_ticks - 1:
+                    raise ValueError(
+                        f"Number of labels must be one less than the number of ticks; "
+                        f"received {num_labels} labels and {num_ticks} ticks."
+                    )
+        elif not uniform_spacing and labels:
+            if not num_labels == num_ticks:
+                raise ValueError(
+                    f"Number of labels must be equal to the number of ticks; "
+                    f"received {num_labels} labels and {num_ticks} ticks."
+                )
+            self.major_label_overrides = dict(zip(self.ticks, labels))
+
+    def _hook(self, hv_plot, _):
+        plot = hv_plot.handles["plot"]
+        mapper = self._models.CategoricalColorMapper(
+            palette=self.palette,
+            factors=self.factors,
+        )
+        color_bar = self._models.ColorBar(color_mapper=mapper)
+        plot.right[0] = color_bar
+
+    @property
+    def opts_settings(self):
+        """Keyword arguments for opts."""
+        opts_kwargs = dict(
+            cmap=self.palette,
+            color_levels=self.ticks,
+            clim=(self.ticks[0], self.ticks[-1]),
+        )
+        colorbar_opts = dict(ticker=self._models.FixedTicker(ticks=self.ticks))
+        if self.uniform_spacing:
+            opts_kwargs["hooks"] = [self._hook]
+        elif self.major_label_overrides:
+            colorbar_opts["major_label_overrides"] = self.major_label_overrides
+
+        if colorbar_opts:
+            opts_kwargs["colorbar_opts"] = colorbar_opts
+        return opts_kwargs
+
+    def add_to(self, plot):
+        """Adds a colorbar to a plot.
+
+        Args:
+            plot: A HoloViews plot.
+        """
+        return plot.opts(**self.opts_settings)

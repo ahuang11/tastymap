@@ -26,6 +26,10 @@ dependencies = [
     "mkdocs-material",
     "mkdocstrings[python]",
     "pytest-asyncio",
+    "panel",
+    "param",
+    "requests",
+    "xarray"
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -53,7 +57,7 @@ name = "tastymap"
 authors = [
   { name = "tastymap" }
 ]
-description = "colormap palettes for your palate"
+description = "Color palettes for your palate"
 readme = "README.md"
 dynamic = ["version"]
 classifiers = [
@@ -65,6 +69,17 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.optional-dependencies]
+ui = [
+    "panel",
+    "param",
+    "requests",
+    "xarray"
+]
+
 [project.urls]
 Documentation = "https://ahuang11.github.io/tastymap/"
 Source = "https://github.com/ahuang11/tastymap"
+
+[project.scripts]
+tastymap = "tastymap.cli:main"
