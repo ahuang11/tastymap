@@ -3,11 +3,18 @@ from io import StringIO
 
 import matplotlib.pyplot as plt
 import numpy as np
-import panel as pn
-import param
-import requests
-import xarray as xr
 from matplotlib.colors import hsv_to_rgb, rgb2hex
+
+try:
+    import panel as pn  # type: ignore[import]
+    import param  # type: ignore[import]
+    import requests  # type: ignore[import]
+    import xarray as xr  # type: ignore[import]
+except ImportError:
+    raise ImportError(
+        "TastyKitchen additionally requires panel, param, requests, and xarray; "
+        "run `pip install 'tastymap[ui]'` to install."
+    )
 
 from .core import cook_tmap, pair_tbar
 from .models import ColorModel, TastyMap
@@ -497,7 +504,8 @@ class TastyKitchen(pn.viewable.Viewer):
             color_background_tuples.append((f"{prefix}{color}", background_color))
         return [
             pn.pane.HTML(
-                f"<center style='background-color: lightgrey; color: black;'>{color}</center>",
+                f"<center style='background-color: lightgrey; "
+                f"color: black;'>{color}</center>",
                 styles={
                     "background-color": background_color,
                     "font-size": "0.75em",
@@ -607,3 +615,6 @@ class TastyKitchen(pn.viewable.Viewer):
             title="👨‍🍳 TastyKitchen",
             main_max_width="clamp(800px, 80vw, 1150px)",
         )
+
+    def serve(self, port: int = 8888, show: bool = True, **kwargs):
+        pn.serve(self.__panel__(), port=port, show=show, **kwargs)

@@ -134,12 +134,12 @@ class TastyMap:
         return cls.from_list(listed_colormap.colors, name=name)  # type: ignore
 
     def _from_list_with_extremes(self, *args, **kwargs) -> LinearSegmentedColormap:
-        """Creates a TastyMap instance from a list of colors with bad, under, and over colors."""
+        """Creates a TastyMap instance from a list of colors with extreme values."""
         cmap = LinearSegmentedColormap.from_list(*args, **kwargs)
         cmap.set_extremes(
-            bad=self.cmap.get_bad(),
-            under=self.cmap.get_under(),
-            over=self.cmap.get_over(),
+            bad=self.cmap.get_bad(),  # type: ignore
+            under=self.cmap.get_under(),  # type: ignore
+            over=self.cmap.get_over(),  # type: ignore
         )
         return cmap
 
@@ -630,7 +630,7 @@ class HoloViewsTastyBar(TastyBar):
         """
         super().__init__(tmap, bounds, labels, uniform_spacing)
 
-        from bokeh import models
+        from bokeh import models  # type: ignore
 
         self._models = models
         self.palette = self.tmap.to_model("hex").tolist()

@@ -54,7 +54,7 @@ def cook_tmap(
                 "between RGB and HSV color models."
             )
         if len(colors_or_cmap) == 1:
-            colors_or_cmap = colors_or_cmap * 2
+            colors_or_cmap = list(colors_or_cmap) * 2
         tmap = TastyMap.from_list(
             colors_or_cmap, color_model=from_color_model or ColorModel.RGB
         )
@@ -117,7 +117,7 @@ def pair_tbar(
             **tbar_kwargs,
         )
     elif hasattr(plot, "opts"):
-        tbar = HoloViewsTastyBar(
+        tbar = HoloViewsTastyBar(  # type: ignore
             tmap,
             bounds=bounds,
             labels=labels,
