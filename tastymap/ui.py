@@ -427,7 +427,7 @@ class TastyKitchen(pn.viewable.Viewer):
             self.colors_select.param.update(value=value + processed_colors)
             self._add_to_history(processed_colors)
         except ValueError as exc:
-            if len(value) > 2:
+            if "invalid" in str(exc).lower():
                 self.colors_select.param.update(value=value)
                 pn.state.notifications.error(str(exc))
         finally:
