@@ -114,7 +114,7 @@ def pair_tbar(
             bounds=bounds,
             labels=labels,
             uniform_spacing=uniform_spacing,
-            **tbar_kwargs,
+            **tbar_kwargs,  # type: ignore
         )
     elif hasattr(plot, "opts"):
         tbar = HoloViewsTastyBar(  # type: ignore
@@ -122,7 +122,7 @@ def pair_tbar(
             bounds=bounds,
             labels=labels,
             uniform_spacing=uniform_spacing,
-            **tbar_kwargs,
+            **tbar_kwargs,  # type: ignore
         )
     else:
         raise NotImplementedError
