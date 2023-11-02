@@ -692,6 +692,7 @@ class HoloViewsTastyBar(TastyBar):
             cmap=self.palette,
             color_levels=self.ticks,
             clim=(self.ticks[0], self.ticks[-1]),
+            colorbar=True,
         )
         colorbar_opts = dict(ticker=self._models.FixedTicker(ticks=self.ticks))
         if self.uniform_spacing:
