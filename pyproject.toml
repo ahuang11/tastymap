@@ -29,7 +29,9 @@ dependencies = [
     "panel",
     "param",
     "requests",
-    "xarray"
+    "xarray",
+    "netcdf4",
+    "pooch",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -74,7 +76,9 @@ ui = [
     "panel",
     "param",
     "requests",
-    "xarray"
+    "xarray",
+    "netcdf4",
+    "pooch",
 ]
 
 [project.urls]
