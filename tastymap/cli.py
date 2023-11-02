@@ -9,7 +9,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "ui":
-        TastyKitchen.serve(port=8888, show=True)
+        TastyKitchen().serve(port=8888, show=True)
 
 
 if __name__ == "__main__":

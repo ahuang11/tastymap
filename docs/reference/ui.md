@@ -1,5 +1,5 @@
-# Core
+# UI
 
-::: tastymap.core
+::: tastymap.ui
     options:
       show_source: true
