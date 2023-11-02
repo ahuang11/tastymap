@@ -10,14 +10,14 @@ import xarray as xr
 from matplotlib.colors import hsv_to_rgb, rgb2hex
 
 from .core import cook_tmap, pair_tbar
-from .models import ColorModel, TastyBar, TastyMap
+from .models import ColorModel, TastyMap
 from .utils import get_cmap, get_registered_cmaps
 
 pn.extension("jsoneditor", notifications=True)
 pn.Column.sizing_mode = "stretch_width"
 
 
-class TastyView(pn.viewable.Viewer):
+class TastyKitchen(pn.viewable.Viewer):
     reverse = param.Boolean(
         default=False,
         doc="Whether to reverse the colormap. Defaults to False.",
@@ -50,16 +50,37 @@ class TastyView(pn.viewable.Viewer):
     bad = param.String(
         default=None,
         doc="Color for bad values. Defaults to None.",
+        label="Bad Color",
     )
 
     under = param.String(
         default=None,
         doc="Color for underflow values. Defaults to None.",
+        label="Underflow Color",
     )
 
     over = param.String(
         default=None,
         doc="Color for overflow values. Defaults to None.",
+        label="Overflow Color",
+    )
+
+    hue = param.Number(
+        default=0,
+        bounds=(-255, 255),
+        doc="Hue factor (-255 to 255) to tweak by.",
+    )
+
+    saturation = param.Number(
+        default=1,
+        bounds=(-10, 10),
+        doc="Saturation factor (-10 to 10) to tweak by.",
+    )
+
+    value = param.Number(
+        default=1,
+        bounds=(0, 3),
+        doc="Brightness value factor (0, 3) to tweak by.",
     )
 
     custom_name = param.String(
@@ -87,8 +108,6 @@ class TastyView(pn.viewable.Viewer):
     )
 
     _tmap = param.ClassSelector(class_=TastyMap, doc="The tastymap.", precedence=-1)
-
-    _tbar = param.Parameter(doc="The tastybar image.", precedence=-1)
 
     _registered_cmaps = param.Dict(doc="Registered colormaps.", precedence=-1)
 
@@ -193,28 +212,14 @@ class TastyView(pn.viewable.Viewer):
         colors_upload.param.watch(self._add_color, "value")
         colors_clear.on_click(lambda event: setattr(self.colors_select, "value", []))
 
-        # reference widgets
-
-        file_input = pn.widgets.FileInput(
-            accept=".png, .jpg, .jpeg, .gif, .bmp, .svg, .tiff, .tif",
-            margin=(10, 30, 5, 20),
-            sizing_mode="stretch_width",
-        )
-        url_input = pn.widgets.TextInput(
-            placeholder="Enter a URL to an image to use as reference",
-            margin=(10, 30, 5, 20),
-            sizing_mode="stretch_width",
-        )
-        reference_tabs = pn.Tabs(("URL", url_input), ("File", file_input))
-
-        url_input.param.watch(self._add_reference, "value")
-        file_input.param.watch(self._add_reference, "value")
-
         # tmap widgets
 
         tmap_parameters = [
             "reverse",
             "num_colors",
+            "hue",
+            "saturation",
+            "value",
             "bad",
             "under",
             "over",
@@ -229,6 +234,9 @@ class TastyView(pn.viewable.Viewer):
                     "sizing_mode": "stretch_width",
                     "margin": (5, 10, 5, 10),
                 },
+                "bad": {"placeholder": "black"},
+                "under": {"placeholder": "blue"},
+                "over": {"placeholder": "red"},
             },
         )
 
@@ -244,6 +252,10 @@ class TastyView(pn.viewable.Viewer):
                     "type": pn.widgets.Toggle,
                     "sizing_mode": "stretch_width",
                     "margin": (5, 10, 5, 10),
+                },
+                "bounds": {"placeholder": "[230, 273.15, 291, 300, 330]"},
+                "labels": {
+                    "placeholder": "['freezing', 'cool', 'comfortable', 'warm', 'hot']"
                 },
             },
         )
@@ -274,6 +286,23 @@ class TastyView(pn.viewable.Viewer):
 
         register_button.on_click(self._register_tmap)
 
+        # reference widgets
+
+        file_input = pn.widgets.FileInput(
+            accept=".png, .jpg, .jpeg, .gif, .bmp, .svg, .tiff, .tif",
+            margin=(10, 30, 5, 20),
+            sizing_mode="stretch_width",
+        )
+        url_input = pn.widgets.TextInput(
+            placeholder="Enter a URL to an image to use as reference",
+            margin=(10, 30, 5, 20),
+            sizing_mode="stretch_width",
+        )
+        reference_tabs = pn.Tabs(("URL", url_input), ("File", file_input))
+
+        url_input.param.watch(self._add_reference, "value")
+        file_input.param.watch(self._add_reference, "value")
+
         # layout widgets
 
         self._colors_or_cmap_tabs = pn.Tabs(
@@ -283,8 +312,6 @@ class TastyView(pn.viewable.Viewer):
 
         self._widgets = pn.Column(
             self._colors_or_cmap_tabs,
-            pn.layout.Divider(),
-            reference_tabs,
             pn.layout.Divider(),
             tmap_widgets,
             pn.layout.Divider(),
@@ -312,6 +339,7 @@ class TastyView(pn.viewable.Viewer):
             ),
             pn.Column(
                 pn.pane.HTML("<h2>🌇 Reference Image</h2>"),
+                reference_tabs,
                 self._reference_image,
                 name="Reference Image",
             ),
@@ -487,6 +515,9 @@ class TastyView(pn.viewable.Viewer):
         "colors",
         "from_color_model",
         "num_colors",
+        "hue",
+        "saturation",
+        "value",
         "bad",
         "under",
         "over",
@@ -509,6 +540,9 @@ class TastyView(pn.viewable.Viewer):
             bad=self.bad,
             under=self.under,
             over=self.over,
+            hue=self.hue,
+            saturation=self.saturation,
+            value=self.value,
             from_color_model=self.from_color_model,
         )
 

@@ -2,8 +2,8 @@
 
 from .core import cook_tmap, pair_tbar
 from .models import TastyBar, TastyMap
-from .ui import TastyView
+from .ui import TastyKitchen
 
 __version__ = "0.0.0"
 
-__all__ = ["cook_tmap", "pair_tbar", "TastyMap", "TastyBar", "TastyView"]
+__all__ = ["cook_tmap", "pair_tbar", "TastyMap", "TastyBar", "TastyKitchen"]

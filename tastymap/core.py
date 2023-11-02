@@ -14,6 +14,9 @@ def cook_tmap(
     num_colors: int | None = None,
     reverse: bool = False,
     name: str | None = None,
+    hue: float | None = None,
+    saturation: float | None = None,
+    value: float | None = None,
     bad: str | None = None,
     under: str | None = None,
     over: str | None = None,
@@ -26,6 +29,9 @@ def cook_tmap(
         num_colors: Number of colors in the colormap. Defaults to None.
         reverse: Whether to reverse the colormap. Defaults to False.
         name: Name of the colormap; if provided, registers the cmap. Defaults to None.
+        hue: Hue factor (-255 to 255) to tweak by.
+        saturation: Saturation factor (-10 to 10) to tweak by.
+        value: Brightness value factor (0, 3) to tweak by.
         bad: Color for bad values. Defaults to None.
         under: Color for underflow values. Defaults to None.
         over: Color for overflow values. Defaults to None.
@@ -60,6 +66,9 @@ def cook_tmap(
 
     if bad or under or over:
         tmap = tmap.set_extremes(bad=bad, under=under, over=over)
+
+    if hue or saturation or value:
+        tmap = tmap.tweak_hsv(hue=hue, saturation=saturation, value=value)
 
     if num_colors:
         tmap = tmap.resize(num_colors)
