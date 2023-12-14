@@ -56,7 +56,7 @@ pair_tbar(
 
 ![example](https://github.com/ahuang11/tastymap/assets/15331990/04ab9ea7-d836-44b8-843d-2cb65eddfe63)
 
-Try to craft your visual delight *interactively* with the TastyKitchen UI!
+Try to craft your visual delight *interactively* with the TastyKitchen UI, hosted [here](https://huggingface.co/spaces/ahuang11/tastykitchen)
 
 ```bash
 tastymap ui
