@@ -235,6 +235,16 @@ tmap = cook_tmap(["red", "green", "blue"])
 tmap >> "rgb"
 ```
 
+## Suggesting based on a description
+
+You can have AI suggest a `TastyMap` based on a description:
+
+```python
+from tastymap import ai
+
+tmap = ai.suggest_tmap("Pikachu")
+```
+
 ## Using the TastyKitchen UI
 
 You can use the TastyKitchen UI to craft your `TastyMap` interactively:
