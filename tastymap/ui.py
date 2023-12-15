@@ -416,13 +416,14 @@ class TastyKitchen(pn.viewable.Viewer):
 
         processed_colors = []
         for color in new_event:
-            if not color.strip() or color.startswith("#"):
+            color = color.strip().strip(",")
+            if not color:
                 continue
             try:
-                if " " in color or "," in color:
-                    color = np.array(
-                        ast.literal_eval(",".join(color.strip().split()))
-                    ).astype(float)
+                if " " in color or color.count(",") == 2:
+                    color = np.array(ast.literal_eval(",".join(color.split()))).astype(
+                        float
+                    )
                     if any(c > 1 for c in color):
                         color /= 255
                     color = tuple(color.round(2))
