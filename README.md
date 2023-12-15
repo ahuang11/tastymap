@@ -65,6 +65,8 @@ tmap = ai.suggest_tmap("Pikachu")
 tmap
 ```
 
+![image](https://github.com/ahuang11/tastymap/assets/15331990/5a6f2bd4-4c4f-449c-9f2a-3352c956400a)
+
 Try to craft your visual delight *interactively* with the TastyKitchen UI, hosted [here](https://huggingface.co/spaces/ahuang11/tastykitchen).
 
 ```bash
