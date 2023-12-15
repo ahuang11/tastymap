@@ -56,7 +56,16 @@ pair_tbar(
 
 ![example](https://github.com/ahuang11/tastymap/assets/15331990/04ab9ea7-d836-44b8-843d-2cb65eddfe63)
 
-Try to craft your visual delight *interactively* with the TastyKitchen UI, hosted [here](https://huggingface.co/spaces/ahuang11/tastykitchen)
+Or if you need suggestions, get help from AI by providing a description of what you're imagining:
+
+```python
+from tastymap import ai
+
+tmap = ai.suggest_tmap("Pikachu")
+tmap
+```
+
+Try to craft your visual delight *interactively* with the TastyKitchen UI, hosted [here](https://huggingface.co/spaces/ahuang11/tastykitchen).
 
 ```bash
 tastymap ui
