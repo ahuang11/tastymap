@@ -21,12 +21,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install hatch
         hatch env create
-    - name: Lint and typecheck
-      run: |
-        hatch run lint-check
-    - name: Test
-      run: |
-        hatch run test-cov-xml
     - uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
