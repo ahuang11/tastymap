@@ -1,8 +1,6 @@
-from typing import Any
-
 try:
-    from marvin import ai_fn, ai_model
-    from pydantic import BaseModel, Field
+    from marvin import ai_fn, ai_model  # type: ignore
+    from pydantic import BaseModel, Field  # type: ignore
 except ImportError:
     raise ImportError(
         "Please install marvin and pydantic to use this module, "
@@ -10,7 +8,7 @@ except ImportError:
     )
 
 from .core import cook_tmap
-from .models import ColorModel, TastyMap
+from .models import TastyMap
 
 
 @ai_model
@@ -27,7 +25,7 @@ class AIPalette(BaseModel):
 
 
 @ai_fn
-def _refine_description(description: str, num_colors: int) -> str:
+def _refine_description(description: str, num_colors: int) -> str:  # pragma: no cover
     """
     You are a master painter, and well versed in matplotlib colors.
     Describe in detail what you imagine when you think of
