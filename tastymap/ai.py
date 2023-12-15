@@ -11,7 +11,7 @@ from .core import cook_tmap
 from .models import TastyMap
 
 
-@ai_model
+@ai_model(max_tokens=256)
 class AIPalette(BaseModel):
     colors: list[str] = Field(
         default=...,
@@ -24,7 +24,7 @@ class AIPalette(BaseModel):
     name: str = Field(..., description="A creative name to describe the colors.")
 
 
-@ai_fn
+@ai_fn(max_tokens=256)
 def _refine_description(description: str, num_colors: int) -> str:  # pragma: no cover
     """
     You are a master painter, and well versed in matplotlib colors.
