@@ -245,6 +245,8 @@ from tastymap import ai
 tmap = ai.suggest_tmap("Pikachu")
 ```
 
+![image](https://github.com/ahuang11/tastymap/assets/15331990/5a6f2bd4-4c4f-449c-9f2a-3352c956400a)
+
 ## Using the TastyKitchen UI
 
 You can use the TastyKitchen UI to craft your `TastyMap` interactively:
