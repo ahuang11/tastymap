@@ -81,6 +81,11 @@ ui = [
     "pooch",
 ]
 
+ai = [
+    "marvin",
+    "pydantic",
+]
+
 [project.urls]
 Documentation = "https://ahuang11.github.io/tastymap/"
 Source = "https://github.com/ahuang11/tastymap"

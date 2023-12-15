@@ -16,6 +16,11 @@ except ImportError:
         "run `pip install 'tastymap[ui]'` to install."
     )
 
+try:
+    from .ai import suggest_tmap
+except ImportError:
+    suggest_tmap = None
+
 from .core import cook_tmap, pair_tbar
 from .models import ColorModel, TastyMap
 from .utils import get_cmap, get_registered_cmaps
@@ -198,6 +203,21 @@ class TastyKitchen(pn.viewable.Viewer):
             sizing_mode="stretch_width",
             margin=(10, 30, 5, 20),
         )
+        if suggest_tmap is None:
+            colors_suggest = pn.widgets.TextAreaInput(
+                placeholder="This feature requires the `tastymap[ai]` extra.",
+                margin=(5, 5, 5, 20),
+                auto_grow=True,
+                max_rows=3,
+                disabled=True,
+            )
+        else:
+            colors_suggest = pn.widgets.TextAreaInput(
+                placeholder="Enter a description to let AI suggest a colormap",
+                margin=(5, 5, 5, 20),
+                auto_grow=True,
+                max_rows=3,
+            )
         colors_clear = pn.widgets.Button(
             name="Clear",
             sizing_mode="stretch_width",
@@ -209,6 +229,7 @@ class TastyKitchen(pn.viewable.Viewer):
                 ("Text", colors_input),
                 ("Pick", colors_picker),
                 ("Upload", colors_upload),
+                ("Suggest", colors_suggest),
                 ("Clear", colors_clear),
             ),
             self.colors_select,
@@ -217,6 +238,7 @@ class TastyKitchen(pn.viewable.Viewer):
         colors_input.param.watch(self._add_color, "value")
         colors_picker.param.watch(self._add_color, "value")
         colors_upload.param.watch(self._add_color, "value")
+        colors_suggest.param.watch(self._add_color, "value")
         colors_clear.on_click(lambda event: setattr(self.colors_select, "value", []))
 
         # tmap widgets
@@ -400,6 +422,14 @@ class TastyKitchen(pn.viewable.Viewer):
 
         if isinstance(new_event, bytes):
             new_event = new_event.decode("utf-8")
+        elif "let AI" in event.obj.placeholder:
+            try:
+                event.obj.disabled = True
+                tmap = suggest_tmap(new_event, self.num_colors)
+                self.custom_name = tmap.cmap.name
+                new_event = tmap.to_model("hex").tolist()
+            finally:
+                event.obj.disabled = False
 
         value = self.colors_select.value
         if isinstance(value, dict):
@@ -416,13 +446,14 @@ class TastyKitchen(pn.viewable.Viewer):
 
         processed_colors = []
         for color in new_event:
-            if not color.strip() or color.startswith("#"):
+            color = color.strip().strip(",")
+            if not color:
                 continue
             try:
-                if " " in color or "," in color:
-                    color = np.array(
-                        ast.literal_eval(",".join(color.strip().split()))
-                    ).astype(float)
+                if " " in color or color.count(",") == 2:
+                    color = np.array(ast.literal_eval(",".join(color.split()))).astype(
+                        float
+                    )
                     if any(c > 1 for c in color):
                         color /= 255
                     color = tuple(color.round(2))
