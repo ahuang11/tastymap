@@ -8,6 +8,6 @@ try:
 except ImportError:
     pass
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 __all__ = ["cook_tmap", "pair_tbar", "TastyMap", "TastyBar", "TastyKitchen"]
