@@ -1,7 +1,7 @@
 try:
     from marvin import ai_fn, ai_model  # type: ignore
     from pydantic import BaseModel, Field  # type: ignore
-except ImportError:
+except ImportError as exc:
     raise ImportError(
         "Please install marvin and pydantic to use this module, "
         "e.g. pip install marvin pydantic"
