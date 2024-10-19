@@ -8,7 +8,15 @@ Make, customize, and/or use colormaps, any way you like.
 
 ## 📖 Quick start
 
-Start cooking from pre-made colormaps...
+Try to craft your visual delight *interactively* with the TastyKitchen UI, hosted [here](https://huggingface.co/spaces/ahuang11/tastykitchen).
+
+```bash
+tastymap ui
+```
+
+<img width="1455" alt="image" src="https://github.com/user-attachments/assets/902bfc6b-e36c-4d3a-8c30-7c00276d45aa">
+
+Or, start cooking from pre-made colormaps...
 
 ```python
 from tastymap import cook_tmap
@@ -66,12 +74,6 @@ tmap
 ```
 
 ![image](https://github.com/ahuang11/tastymap/assets/15331990/5a6f2bd4-4c4f-449c-9f2a-3352c956400a)
-
-Try to craft your visual delight *interactively* with the TastyKitchen UI, hosted [here](https://huggingface.co/spaces/ahuang11/tastykitchen).
-
-```bash
-tastymap ui
-```
 
 Check out the [docs](https://ahuang11.github.io/tastymap) for more recipes!
 
