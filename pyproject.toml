@@ -64,6 +64,7 @@ readme = "README.md"
 dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
+    "Framework :: Matplotlib",
 ]
 requires-python = ">=3.9"
 dependencies = [
